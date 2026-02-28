@@ -16,6 +16,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.PowerSettingsNew
 import androidx.compose.material.icons.rounded.SettingsBackupRestore
+import androidx.compose.material.icons.rounded.Menu
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.padding
@@ -26,11 +28,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 
 // CenterAlignedTopAppBar is an experimental API so need to allow it
 @Composable
@@ -48,7 +56,7 @@ fun MainScreen(
         bottomBar = {
             BottomAppBar(
                 containerColor = MaterialTheme.colorScheme.background,
-                contentColor = MaterialTheme.colorScheme.tertiary,
+                contentColor = MaterialTheme.colorScheme.secondary,
             ) {
                 // Creating a row of items at the bottom of the screen
                 Row(
@@ -111,7 +119,7 @@ private fun EQSliders(
                     colors = SliderDefaults.colors(
                         thumbColor = MaterialTheme.colorScheme.primary,
                         activeTrackColor = MaterialTheme.colorScheme.primary,
-                        inactiveTrackColor = MaterialTheme.colorScheme.tertiary
+                        inactiveTrackColor = MaterialTheme.colorScheme.secondary
                     ),
                     // Slider can go from -18dB to +18dB
                     valueRange = -18f..18f,
@@ -131,6 +139,8 @@ private fun EQSliders(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AppTitle() {
+    var menuOpen by remember { mutableStateOf(false) }
+    // Handles the app bar at the top of the UI
     CenterAlignedTopAppBar(
         // Making it look pretty
         colors = TopAppBarDefaults.topAppBarColors(
@@ -143,17 +153,57 @@ private fun AppTitle() {
                 "OpenEQ",
                 style = MaterialTheme.typography.titleLarge
             )
+        },
+        // Menu handling
+        actions = {
+            // Creating menu button
+            IconButton(onClick={menuOpen = !menuOpen}) {
+                Icon(
+                    imageVector=Icons.Rounded.Menu,
+                    contentDescription = "Options Menu",
+                    tint = MaterialTheme.colorScheme.tertiary
+                )
+            }
+            // Creating items in menu
+            DropdownMenu(
+                // Handling whether it's expanded or not, and what happens when it's closed
+                expanded = menuOpen,
+                onDismissRequest = {menuOpen = false}
+            ) {
+                // Menu items
+                DropdownMenuItem(
+                    // Menu item text
+                    text = {
+                        Text(
+                            "Info",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                    },
+                    // Icon at start of menu item
+                    leadingIcon = {
+                        Icon(
+                            imageVector=Icons.Rounded.Info,
+                            contentDescription = "Information about the app",
+                            tint = MaterialTheme.colorScheme.secondary
+                        )
+                    },
+                    onClick = {} // TODO
+                )
+                // TODO
+            }
         }
     )
 }
 
 @Composable
 private fun PowerButton(eqEnabled: Boolean, eqToggle: () -> Unit) {
+    // Handles the button to toggle the EQ on or off
     LargeFloatingActionButton(
         onClick = {eqToggle()},
         shape= CircleShape,
         // Changing button color depending on whether EQ is enabled or not
-        containerColor = if (eqEnabled) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.tertiary
+        containerColor = if (eqEnabled) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.secondary
     )
     {
         // Setting the button icon

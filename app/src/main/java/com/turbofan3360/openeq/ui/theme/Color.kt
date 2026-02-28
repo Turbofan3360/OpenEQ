@@ -4,6 +4,6 @@ import androidx.compose.ui.graphics.Color
 
 val Background = Color(0xFF1A242C)
 val Primary = Color(0xFFFFA726)
-val Secondary = Color(0xFFEF5350)
-val Tertiary = Color(0xFFFFFFFF)
+val Secondary = Color(0xFFFFFFFF)
+val Tertiary = Color(0xFFB4B4B4)
 val Outline = Color(0xFF81C784) // Controls colour of EQ toggle on/off button when EQ active
