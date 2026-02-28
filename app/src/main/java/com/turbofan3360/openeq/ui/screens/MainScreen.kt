@@ -8,15 +8,23 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.LargeFloatingActionButton
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.PowerSettingsNew
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.rounded.PowerSettingsNew
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 
 // CenterAlignedTopAppBar is an experimental API so need to allow it
@@ -30,10 +38,54 @@ fun MainScreen(eqEnabled: Boolean, eqToggle: () -> Unit) {
         // Centering the EQ on/off toggle button
         floatingActionButtonPosition = FabPosition.Center
     ) {
-        // Defining content: Currently just a blank background colored, set to fill the page
+        // Defining content: Draws a colored background that fills the page, and then draws the EQ Sliders on it
         innerPadding -> Box(modifier =
             Modifier.fillMaxSize().background(color=MaterialTheme.colorScheme.background).padding(paddingValues=innerPadding)
-        ) {}
+        ) {EQSliders()}
+    }
+}
+
+@Composable
+private fun EQSliders() {
+    Row(
+        // Evenly spacing the 10 EQ sliders across the screen
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        // Repeating the slider 10 times across the screen
+        repeat(10) {
+            // Generates 1 EQ slider with labels
+            Column(
+                verticalArrangement = Arrangement.Center
+            ) {
+                // Defines the column:
+                // EQ level text
+                Text(
+                    "dB",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                // EQ level slider
+                Slider(
+                    // Modifier to re-orient the slider visually, and re-size its footprint
+                    modifier = Modifier
+                        .rotate(90f)
+                        .size(width = 40.dp, height = 200.dp),
+
+                    value =, // Setting slider value
+                    onValueChange = {}, // Modifying state variable when slider moved
+                    colors = SliderDefaults.colors(
+                        thumbColor = MaterialTheme.colorScheme.primary,
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                        inactiveTrackColor = MaterialTheme.colorScheme.tertiary
+                    ),
+                    valueRange = -18f..18f, // Slider can go from -18dB to +18dB
+                )
+                // Frequency band text
+                Text(
+                    "Hz", // Displaying frequency band in Hz
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
     }
 }
 
@@ -61,14 +113,14 @@ private fun PowerButton(eqEnabled: Boolean, eqToggle: () -> Unit) {
     LargeFloatingActionButton(
         onClick = {eqToggle()},
         shape= CircleShape,
-        // Changing button colour depending on whether EQ is enabled or not
+        // Changing button color depending on whether EQ is enabled or not
         containerColor = if (eqEnabled) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.tertiary
     )
     {
         // Setting the button icon
         Icon(
             imageVector=Icons.Rounded.PowerSettingsNew,
-            contentDescription="Toggle equalizer on/off"
+            contentDescription="Toggle Equalizer On or Off"
         )
     }
 }
