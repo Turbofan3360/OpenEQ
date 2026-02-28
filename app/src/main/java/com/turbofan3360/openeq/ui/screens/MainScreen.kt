@@ -9,6 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.LargeFloatingActionButton
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.MaterialTheme
@@ -22,14 +23,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.BottomAppBarDefaults
-import androidx.compose.material3.IconButton
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.Alignment
 import androidx.compose.runtime.Composable
 
 // CenterAlignedTopAppBar is an experimental API so need to allow it
@@ -50,7 +50,15 @@ fun MainScreen(
                 containerColor = MaterialTheme.colorScheme.background,
                 contentColor = MaterialTheme.colorScheme.tertiary,
             ) {
-                ResetButton(updateEqLevel)
+                // Creating a row of items at the bottom of the screen
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    // Shifting everything to the right first
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    // Adding the button to zero all sliders
+                    ResetButton(updateEqLevel)
+                }
             }
         },
         // Creating the power button at the bottom
@@ -72,6 +80,7 @@ private fun EQSliders(
     updateEqLevel: (Int, Float) -> Unit
     ) {
     Row(
+        modifier = Modifier.fillMaxWidth(),
         // Evenly spacing the 10 EQ sliders across the screen
         horizontalArrangement = Arrangement.SpaceEvenly,
     ) {
@@ -85,7 +94,8 @@ private fun EQSliders(
                 // EQ dB level text
                 Text(
                     "${roundOneDP(eqLevels[sliderNo])}",
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
                 // EQ level slider
                 Slider(
@@ -110,7 +120,8 @@ private fun EQSliders(
                 Text(
                     // Displaying frequency band in Hz
                     frequencyBands[sliderNo],
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
             }
         }
