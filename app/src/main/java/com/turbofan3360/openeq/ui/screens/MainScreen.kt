@@ -17,39 +17,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.rounded.PowerSettingsNew
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.runtime.Composable
 
 // CenterAlignedTopAppBar is an experimental API so need to allow it
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-@Preview
-fun MainScreen() {
+fun MainScreen(eqEnabled: Boolean, eqToggle: () -> Unit) {
     Scaffold(
         // Creating the "OpenEQ" app bar at the top of the main screen
-        topBar = {
-            CenterAlignedTopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.primary
-                ),
-                title = {
-                    Text(
-                        "OpenEQ",
-                        style = MaterialTheme.typography.titleLarge
-                        )
-                }
-            )
-        },
+        topBar = {AppTitle()},
         // Creating the power button at the bottom
-        floatingActionButton = {
-            LargeFloatingActionButton(onClick = {updateEQState()}, shape= CircleShape) {
-                Icon(
-                    imageVector=Icons.Rounded.PowerSettingsNew,
-                    contentDescription="Toggle equalizer on/off"
-                )
-            }
-        },
+        floatingActionButton = {PowerButton(eqEnabled, eqToggle)},
+        // Centering the EQ on/off toggle button
         floatingActionButtonPosition = FabPosition.Center
     ) {
         // Defining content: Currently just a blank background colored, set to fill the page
@@ -59,6 +37,38 @@ fun MainScreen() {
     }
 }
 
-fun updateEQState() {
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AppTitle() {
+    CenterAlignedTopAppBar(
+        // Making it look pretty
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.background,
+            titleContentColor = MaterialTheme.colorScheme.primary
+        ),
+        // App title text
+        title = {
+            Text(
+                "OpenEQ",
+                style = MaterialTheme.typography.titleLarge
+            )
+        }
+    )
+}
 
+@Composable
+private fun PowerButton(eqEnabled: Boolean, eqToggle: () -> Unit) {
+    LargeFloatingActionButton(
+        onClick = {eqToggle()},
+        shape= CircleShape,
+        // Changing button colour depending on whether EQ is enabled or not
+        containerColor = if (eqEnabled) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.tertiary
+    )
+    {
+        // Setting the button icon
+        Icon(
+            imageVector=Icons.Rounded.PowerSettingsNew,
+            contentDescription="Toggle equalizer on/off"
+        )
+    }
 }

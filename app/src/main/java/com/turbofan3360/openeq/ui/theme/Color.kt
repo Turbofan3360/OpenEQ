@@ -6,3 +6,4 @@ val Background = Color(0xFF22313F)
 val Primary = Color(0xFFFFA726)
 val Secondary = Color(0xFFEF5350)
 val Tertiary = Color(0xFFFFFFFF)
+val Outline = Color(0xFF81C784) // Controls colour of EQ toggle on/off button when EQ active
