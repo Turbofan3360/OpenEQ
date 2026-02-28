@@ -10,8 +10,8 @@ import androidx.compose.material3.LargeFloatingActionButton
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.PowerSettingsNew
@@ -26,19 +26,23 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.Alignment
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.Alignment
+
+import com.turbofan3360.openeq.ui.components.VerticalSlider
+
+// TODO: Make layout adaptive to different screen sizes
+// TODO: Make layout adaptive to different screen orientations
 
 // CenterAlignedTopAppBar is an experimental API so need to allow it
 @Composable
@@ -69,7 +73,7 @@ fun MainScreen(
                 }
             }
         },
-        // Creating the power button at the bottom
+        // Creating the EQ on/off toggle button at the bottom
         floatingActionButton = {PowerButton(eqEnabled, eqToggle)},
         // Centering the EQ on/off toggle button
         floatingActionButtonPosition = FabPosition.Center
@@ -90,45 +94,48 @@ private fun EQSliders(
     Row(
         modifier = Modifier.fillMaxWidth(),
         // Evenly spacing the 10 EQ sliders across the screen
-        horizontalArrangement = Arrangement.SpaceEvenly,
+        horizontalArrangement = Arrangement.SpaceAround
     ) {
         // Repeating the slider 10 times across the screen
         repeat(10) { sliderNo ->
             // Generates 1 EQ slider with labels
             Column(
-                verticalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.weight(1f)
             ) {
                 // Defines the column:
+                // Adding spacing
+                Spacer(modifier=Modifier.height(20.dp))
                 // EQ dB level text
                 Text(
                     "${roundOneDP(eqLevels[sliderNo])}",
                     style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary,
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
+                // Adding spacing
+                Spacer(modifier=Modifier.height(20.dp))
                 // EQ level slider
-                Slider(
-                    // Modifier to re-orient the slider visually, and re-size its footprint
-                    modifier = Modifier
-                        .size(width = 40.dp, height = 500.dp)
-                        .rotate(-90f),
-
+                VerticalSlider(
+                    height = 400.dp, // TODO: MAKE THIS ADAPTIVE
                     // Setting slider value
                     value = eqLevels[sliderNo],
                     // Modifying state variable when slider moved
                     onValueChange = { newValue -> updateEqLevel(sliderNo, roundOneDP(newValue)) },
-                    colors = SliderDefaults.colors(
-                        thumbColor = MaterialTheme.colorScheme.primary,
-                        activeTrackColor = MaterialTheme.colorScheme.primary,
-                        inactiveTrackColor = MaterialTheme.colorScheme.secondary
-                    ),
+                    trackColor = MaterialTheme.colorScheme.tertiary,
+                    thumbColor = MaterialTheme.colorScheme.primary,
                     // Slider can go from -18dB to +18dB
-                    valueRange = -18f..18f,
+                    valueRange = -18f..18f
                 )
+                // Adding spacing
+                Spacer(modifier=Modifier.height(20.dp))
                 // Frequency band text
                 Text(
                     // Displaying frequency band in Hz
                     frequencyBands[sliderNo],
                     style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary,
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
             }
@@ -175,7 +182,7 @@ private fun AppTitle() {
                     // Menu item text
                     text = {
                         Text(
-                            "Info",
+                            "About",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.secondary
                         )
