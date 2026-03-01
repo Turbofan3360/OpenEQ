@@ -16,7 +16,8 @@ private val DarkColorScheme = darkColorScheme(
     primary = Primary,
     secondary = Secondary,
     tertiary = Tertiary,
-    outline = Outline
+    outline = EQOn,
+    primaryContainer = MenuBackground
 )
 
 @Composable

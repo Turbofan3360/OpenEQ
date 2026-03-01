@@ -197,11 +197,11 @@ private fun EQCurve(
             // Finding curve control points
             val (point1, point2) = generateSplineControlPoint(
                 // Handling edge case with first point
-                if (i!=0) thumbPositions[i-1] else Offset(x=thumbPositions[0].x-10f, y=thumbPositions[0].y),
+                if (i!=0) thumbPositions[i-1] else Offset(x=thumbPositions[0].x*0.5f, y=thumbPositions[0].y),
                 thumbPositions[i],
                 thumbPositions[i+1],
                 // Handling edge case with final point
-                if (i!=8) thumbPositions[i+2] else Offset(x=thumbPositions[9].x+10f, y=thumbPositions[9].y)
+                if (i!=8) thumbPositions[i+2] else Offset(x=thumbPositions[9].x+20, y=thumbPositions[9].y)
             )
             // Adding another curve to the spline
             path.cubicTo(
@@ -258,7 +258,8 @@ private fun AppTitle() {
             DropdownMenu(
                 // Handling whether it's expanded or not, and what happens when it's closed
                 expanded = menuOpen,
-                onDismissRequest = {menuOpen = false}
+                onDismissRequest = {menuOpen = false},
+                modifier = Modifier.background(MaterialTheme.colorScheme.primaryContainer)
             ) {
                 // Menu items
                 DropdownMenuItem(
