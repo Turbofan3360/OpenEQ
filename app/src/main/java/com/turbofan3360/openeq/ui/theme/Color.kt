@@ -2,7 +2,7 @@ package com.turbofan3360.openeq.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Background = Color(0xFF1A242C)
+val Background = Color(0xFF1A202C)
 val Primary = Color(0xFFFFA726)
 val Secondary = Color(0xFFFFFFFF)
 val Tertiary = Color(0xFFB4B4B4)

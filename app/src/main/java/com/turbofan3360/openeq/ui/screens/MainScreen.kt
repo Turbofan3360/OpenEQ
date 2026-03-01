@@ -21,14 +21,13 @@ import androidx.compose.material.icons.rounded.Info
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -36,12 +35,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.times
 import androidx.compose.ui.Alignment
 
 import com.turbofan3360.openeq.ui.components.VerticalSlider
 
-// TODO: Make layout adaptive to different screen sizes
 // TODO: Make layout adaptive to different screen orientations
 
 // CenterAlignedTopAppBar is an experimental API so need to allow it
@@ -79,18 +78,26 @@ fun MainScreen(
         floatingActionButtonPosition = FabPosition.Center
     ) {
         // Defining content: Draws a colored background that fills the page, and then draws the EQ Sliders on it
-        innerPadding -> Box(modifier =
-            Modifier.fillMaxSize().background(color=MaterialTheme.colorScheme.background).padding(paddingValues=innerPadding)
-        ) {EQSliders(frequencyBands, eqLevels, updateEqLevel)}
+        innerPadding ->
+        BoxWithConstraints(
+            modifier = Modifier.fillMaxSize().background(color=MaterialTheme.colorScheme.background).padding(paddingValues=innerPadding),
+        ) {
+            val scope = this
+            EQSliders(scope.maxHeight, frequencyBands, eqLevels, updateEqLevel)
+        }
     }
 }
 
 @Composable
 private fun EQSliders(
+    boxHeight: Dp,
     frequencyBands: List<String>,
     eqLevels: MutableList<Float>,
     updateEqLevel: (Int, Float) -> Unit
     ) {
+    val sliderHeight = 0.625f*boxHeight
+    val spacerHeight = (boxHeight-sliderHeight)/10
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         // Evenly spacing the 10 EQ sliders across the screen
@@ -106,7 +113,7 @@ private fun EQSliders(
             ) {
                 // Defines the column:
                 // Adding spacing
-                Spacer(modifier=Modifier.height(20.dp))
+                Spacer(modifier=Modifier.height(spacerHeight))
                 // EQ dB level text
                 Text(
                     "${roundOneDP(eqLevels[sliderNo])}",
@@ -115,10 +122,10 @@ private fun EQSliders(
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
                 // Adding spacing
-                Spacer(modifier=Modifier.height(20.dp))
+                Spacer(modifier=Modifier.height(spacerHeight))
                 // EQ level slider
                 VerticalSlider(
-                    height = 400.dp, // TODO: MAKE THIS ADAPTIVE
+                    height = sliderHeight,
                     // Setting slider value
                     value = eqLevels[sliderNo],
                     // Modifying state variable when slider moved
@@ -129,7 +136,7 @@ private fun EQSliders(
                     valueRange = -18f..18f
                 )
                 // Adding spacing
-                Spacer(modifier=Modifier.height(20.dp))
+                Spacer(modifier=Modifier.height(spacerHeight))
                 // Frequency band text
                 Text(
                     // Displaying frequency band in Hz
@@ -197,7 +204,7 @@ private fun AppTitle() {
                     },
                     onClick = {} // TODO
                 )
-                // TODO
+                // TODO: Complete menu
             }
         }
     )
