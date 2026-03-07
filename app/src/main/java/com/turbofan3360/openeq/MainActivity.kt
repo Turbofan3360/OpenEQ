@@ -34,7 +34,7 @@ class MainActivityViewModel: ViewModel() {
 }
 
 class MainActivity : ComponentActivity() {
-    lateinit var foregroundServiceIntent: Intent
+    val foregroundServiceIntent: Intent by lazy{Intent(this, EQMediaListenerService::class.java)}
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,8 +68,7 @@ class MainActivity : ComponentActivity() {
     private fun startMediaListenService() {
         // Checking for and requesting notification permission if not already given
         checkNotificationPermission()
-        // Handles starting the foreground service that listens for media streams starting
-        foregroundServiceIntent = Intent(this, EQMediaListenerService::class.java)
+        // Starting the foreground service that listens for media streams starting
         this.startForegroundService(foregroundServiceIntent)
     }
 
