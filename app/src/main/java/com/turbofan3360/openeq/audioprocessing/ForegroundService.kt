@@ -5,9 +5,12 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.media.audiofx.AudioEffect
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
@@ -26,6 +29,7 @@ class EQMediaListenerService: Service() {
     val notificationManager: NotificationManager by lazy{getSystemService(NOTIFICATION_SERVICE) as NotificationManager}
     val mediaStreamStartListener = MediaStreamStartReceiver()
     val mediaStreamStopListener = MediaStreamStopReceiver()
+    var audioStreamIDs = mutableListOf<Int>()
 
     override fun onBind(intent: Intent): IBinder? {
         // Required method; not used in this service
@@ -98,7 +102,7 @@ class EQMediaListenerService: Service() {
         channelName: String,
         channelDescription: String,
     ){
-        // Checking if it already exists:
+        // Checking if it already exists (if so, don't re-create it)
         val existingChannel = notificationManager.getNotificationChannel(NOTIFICATION_ID.toString())
 
         if (existingChannel == null) {
@@ -113,6 +117,36 @@ class EQMediaListenerService: Service() {
             }
             // Register the channel with the system
             notificationManager.createNotificationChannel(channel)
+        }
+    }
+
+    // ---------------------
+    //  BROADCAST RECEIVERS
+    // ---------------------
+
+    inner class MediaStreamStartReceiver: BroadcastReceiver() {
+        // Defining what happens when it detects a media stream starting
+        override fun onReceive(context: Context?, intent: Intent?) {
+            // Getting audio stream ID
+            val mediaStreamID = intent?.getIntExtra(AudioEffect.EXTRA_AUDIO_SESSION, 0)
+
+            // If the ID isn't null, adds the ID to a list tracking audio streams
+            if(mediaStreamID != null) {
+                this@EQMediaListenerService.audioStreamIDs += mediaStreamID
+            }
+        }
+    }
+
+    inner class MediaStreamStopReceiver: BroadcastReceiver() {
+        // Defining what happens when it detects a media stream ending
+        override fun onReceive(context: Context?, intent: Intent?) {
+            // Getting audio stream ID
+            val mediaStreamID = intent?.getIntExtra(AudioEffect.EXTRA_AUDIO_SESSION, 0)
+
+            // If the ID isn't null, removes the ID from the list tracking audio streams
+            if (mediaStreamID != null) {
+                this@EQMediaListenerService.audioStreamIDs.remove(mediaStreamID)
+            }
         }
     }
 }
