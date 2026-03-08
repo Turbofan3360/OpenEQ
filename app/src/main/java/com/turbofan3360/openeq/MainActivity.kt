@@ -3,8 +3,12 @@ package com.turbofan3360.openeq
 import android.Manifest
 import android.content.pm.PackageManager
 import android.content.Intent
+import android.content.ServiceConnection
+import android.content.ComponentName
+import android.content.Context
 import android.os.Bundle
 import android.os.Build
+import android.os.IBinder
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -34,7 +38,20 @@ class MainActivityViewModel: ViewModel() {
 }
 
 class MainActivity : ComponentActivity() {
-    val foregroundServiceIntent: Intent by lazy{Intent(this, EQMediaListenerService::class.java)}
+    private val foregroundServiceIntent: Intent by lazy{Intent(this, EQMediaListenerService::class.java)}
+
+    // Object to bind to the foreground service
+    private var eqService: EQMediaListenerService? = null
+    private val connection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            val binder = service as EQMediaListenerService.LocalBinder
+            eqService = binder.getService()
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            eqService = null
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,11 +75,21 @@ class MainActivity : ComponentActivity() {
                                },
                     myViewModel.eqLevels,
                     updateEqLevel = {index:Int, value:Float ->
-                        myViewModel.eqLevels[index] = value},
+                        myViewModel.eqLevels[index] = value
+                        // Passing updated EQ levels to the foreground service managing EQ objects
+                        eqService?.updateEqLevels(myViewModel.eqLevels)
+                                    },
                     frequencyBands = myViewModel.eqFrequencyBandsStr,
                 )
             }
         }
+    }
+
+    override fun onDestroy() {
+        // Unbinds from the foreground service if it's bound
+        unbindService(connection)
+        // Calls the onDestroy() of the parent class to properly destroy the activity
+        super.onDestroy()
     }
 
     private fun startMediaListenService() {
@@ -70,9 +97,13 @@ class MainActivity : ComponentActivity() {
         checkNotificationPermission()
         // Starting the foreground service that listens for media streams starting
         this.startForegroundService(foregroundServiceIntent)
+        // Binds to the service so new EQ levels can be passed in when the user sets them
+        bindService(foregroundServiceIntent, connection, Context.BIND_AUTO_CREATE)
     }
 
     private fun stopMediaListenService() {
+        // Unbinds from foreground service
+        unbindService(connection)
         // Stops the foreground service that listens for media streams starting
         stopService(foregroundServiceIntent)
     }

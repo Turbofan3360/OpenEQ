@@ -11,7 +11,9 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.media.audiofx.AudioEffect
+import android.media.audiofx.Equalizer
 import android.os.Build
+import android.os.Binder
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -26,15 +28,26 @@ private const val NOTIFICATION_ID = 1
 // Foreground service that listens for media streams starting and then attaches equalizers to them
 class EQMediaListenerService: Service() {
     // Initialises on first access to variable
-    val notificationManager: NotificationManager by lazy{getSystemService(NOTIFICATION_SERVICE) as NotificationManager}
-    val mediaStreamStartListener = MediaStreamStartReceiver()
-    val mediaStreamStopListener = MediaStreamStopReceiver()
-    var audioStreamIDs = mutableListOf<Int>()
+    private val notificationManager: NotificationManager by lazy{getSystemService(NOTIFICATION_SERVICE) as NotificationManager}
 
-    override fun onBind(intent: Intent): IBinder? {
-        // Required method; not used in this service
-        return null
+    private val mediaStreamStartListener = MediaStreamStartReceiver()
+    private val mediaStreamStopListener = MediaStreamStopReceiver()
+    private var eqObjects = mutableMapOf<Int, Equalizer>()
+    private var eqLevels = mutableListOf<Float>()
+    private var binder = LocalBinder()
+
+    //---------------------------------
+    // Handles binding to this service
+    //---------------------------------
+    inner class LocalBinder : Binder() {
+        fun getService() = this@EQMediaListenerService
     }
+
+    override fun onBind(intent: Intent): IBinder {
+        // Returns a binder object to interact with this service
+        return binder
+    }
+    //---------------------------------
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         // Called when starting the service
@@ -66,6 +79,23 @@ class EQMediaListenerService: Service() {
         // Unregistering the broadcast receivers
         this.unregisterReceiver(mediaStreamStartListener)
         this.unregisterReceiver(mediaStreamStopListener)
+        // Releasing all EQ objects
+        for ((_, eqObj) in eqObjects) {
+            delEqualizer(eqObj)
+        }
+    }
+
+    // Public function that lets you update the equalizer levels
+    // Intended to be called from MainActivity when that is bound to this service
+    fun updateEqLevels(
+        newEqLevels: MutableList<Float>
+    ) {
+        eqLevels = newEqLevels
+
+        // Setting all EQ instances to the new levels
+        for ((_, eqObj) in eqObjects) {
+            setEqualizer(eqObj, eqLevels)
+        }
     }
 
     private fun eqNotification() {
@@ -130,9 +160,12 @@ class EQMediaListenerService: Service() {
             // Getting audio stream ID
             val mediaStreamID = intent?.getIntExtra(AudioEffect.EXTRA_AUDIO_SESSION, 0)
 
-            // If the ID isn't null, adds the ID to a list tracking audio streams
+            // If the ID isn't null, creates an equalizer object attached to that stream
+            // Saves the equalizer object to the map
+            // Then sets the equalizer levels on that EQ object to the current levels
             if(mediaStreamID != null) {
-                this@EQMediaListenerService.audioStreamIDs += mediaStreamID
+                eqObjects[mediaStreamID] = addEqualizer(mediaStreamID)
+                setEqualizer(eqObjects[mediaStreamID]!!, eqLevels)
             }
         }
     }
@@ -143,9 +176,14 @@ class EQMediaListenerService: Service() {
             // Getting audio stream ID
             val mediaStreamID = intent?.getIntExtra(AudioEffect.EXTRA_AUDIO_SESSION, 0)
 
-            // If the ID isn't null, removes the ID from the list tracking audio streams
+            // If the ID isn't null, gets the EQ object attached to the given media stream, closes the EQ, and removes it from the map
             if (mediaStreamID != null) {
-                this@EQMediaListenerService.audioStreamIDs.remove(mediaStreamID)
+                val eqObj = eqObjects[mediaStreamID]
+
+                if (eqObj != null) {
+                    delEqualizer(eqObj)
+                    eqObjects.remove(mediaStreamID)
+                }
             }
         }
     }
