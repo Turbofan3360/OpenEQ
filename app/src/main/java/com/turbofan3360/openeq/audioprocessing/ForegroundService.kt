@@ -23,7 +23,8 @@ import androidx.core.content.ContextCompat.checkSelfPermission
 import com.turbofan3360.openeq.MainActivity
 import com.turbofan3360.openeq.R
 
-private const val NOTIFICATION_ID = 1
+private const val PERMANENT_NOTIFICATION_ID = 1
+private const val NOTIFICATION_CHANNEL_ID = "eq_service_channel"
 
 // Foreground service that listens for media streams starting and then attaches equalizers to them
 class EQMediaListenerService: Service() {
@@ -75,7 +76,7 @@ class EQMediaListenerService: Service() {
     override fun onDestroy() {
         // Tidies up everything when stopping the foreground service
         // Deletes notification
-        NotificationManagerCompat.from(this).cancel(NOTIFICATION_ID)
+        NotificationManagerCompat.from(this).cancel(PERMANENT_NOTIFICATION_ID)
         // Unregistering the broadcast receivers
         this.unregisterReceiver(mediaStreamStartListener)
         this.unregisterReceiver(mediaStreamStopListener)
@@ -99,11 +100,6 @@ class EQMediaListenerService: Service() {
     }
 
     private fun eqNotification() {
-        if (checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_DENIED
-            && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            return
-        }
-
         // Creating a notification channel to post my notification to
         createEqNotificationChannel(
             getString(R.string.notification_channel_name),
@@ -114,7 +110,7 @@ class EQMediaListenerService: Service() {
         val tapIntent: PendingIntent = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
 
         // Creating the notification object for my foreground service notification
-        val notification = NotificationCompat.Builder(this, NOTIFICATION_ID.toString())
+        val notification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle(getString(R.string.app_name))
             .setContentText(getString(R.string.notification_info))
@@ -125,7 +121,7 @@ class EQMediaListenerService: Service() {
             .build()
 
         // Shows notification on notification channel
-        startForeground(NOTIFICATION_ID, notification)
+        startForeground(PERMANENT_NOTIFICATION_ID, notification)
     }
 
     private fun createEqNotificationChannel(
@@ -133,13 +129,13 @@ class EQMediaListenerService: Service() {
         channelDescription: String,
     ){
         // Checking if it already exists (if so, don't re-create it)
-        val existingChannel = notificationManager.getNotificationChannel(NOTIFICATION_ID.toString())
+        val existingChannel = notificationManager.getNotificationChannel(NOTIFICATION_CHANNEL_ID)
 
         if (existingChannel == null) {
             // Creates a notification channel that notifications can then be posted to
             val importance = NotificationManager.IMPORTANCE_LOW
             val channel = NotificationChannel(
-                NOTIFICATION_ID.toString(),
+                NOTIFICATION_CHANNEL_ID,
                 channelName,
                 importance
             ).apply {
