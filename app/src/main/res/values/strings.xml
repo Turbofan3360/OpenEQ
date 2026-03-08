@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">OpenEQ</string>
+    <string name="menu_info">About</string>
+
+    <string name="notification_info">OpenEQ is running a foreground service to detect media streams</string>
+    <string name="notification_channel_name">Foreground Service</string>
+    <string name="notification_channel_info">Notifications for the OpenEQ foreground service to detect streaming media</string>
 </resources>
