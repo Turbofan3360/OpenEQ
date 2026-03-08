@@ -46,6 +46,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.mutableStateListOf
 import android.content.res.Configuration
@@ -239,6 +240,7 @@ private fun EQCurve(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AppTitle() {
+    val uriHandler = LocalUriHandler.current
     var menuOpen by remember { mutableStateOf(false) }
     // Handles the app bar at the top of the UI
     CenterAlignedTopAppBar(
@@ -289,7 +291,7 @@ private fun AppTitle() {
                             tint = MaterialTheme.colorScheme.secondary
                         )
                     },
-                    onClick = {} // TODO
+                    onClick = { uriHandler.openUri("https://github.com/Turbofan3360/OpenEQ") }
                 )
                 // TODO: Complete menu
             }

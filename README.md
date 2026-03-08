@@ -13,7 +13,7 @@ This is the repository for OpenEQ, an open-source, privacy respecting, and simpl
 
 ### Installation: ###
 
-Please go to the releases page of this repository to download the .apk which you can then install. I intend to get this app on F-Droid in the future, and potentially on the Google Play Store, but I want to complete some more development first.
+Please go to the [releases page](https://github.com/Turbofan3360/OpenEQ/releases) to download the .apk which you can then install. I intend to get this app on F-Droid in the future, and potentially on the Google Play Store, but I want to complete some more development first.
 
 ### Features in development: ###
 
@@ -33,4 +33,4 @@ I'm more than happy to have people contribute to this project! Please feel free 
 
 ### License: ###
 
-This project is licensed under the GNU General Public License Version 3.
+This project is licensed under the [GNU General Public License Version 3](https://github.com/Turbofan3360/OpenEQ/blob/master/LICENSE)
