@@ -56,8 +56,6 @@ import com.turbofan3360.openeq.ui.components.VerticalSlider
 import com.turbofan3360.openeq.ui.utils.roundOneDP
 import com.turbofan3360.openeq.ui.utils.generateSplineControlPoint
 
-// TODO: Preset saving & dropdown menu
-
 // CenterAlignedTopAppBar is an experimental API so need to allow it
 @Composable
 fun MainScreen(
