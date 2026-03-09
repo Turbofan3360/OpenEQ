@@ -22,8 +22,11 @@ Please go to the [releases page](https://github.com/Turbofan3360/OpenEQ/releases
 Some media players require extra configuration to ensure they interface properly with the equalizer. The known ones are:
 
 **Deezer:** Open sound settings bottom left → Equalizer → "Activate"
+
 **Musicolet:** Three dots → Settings → Audio → Equalizer → "System Equalizer"
+
 **Neutron:** Settings → Audio Hardware → "Enable DSP Effect (Device)" → Confirm
+
 **BlackPlayer:** Hamburger menu → Audio → Equalizer → "Default Equalizer"
 
 ### Features in development: ###
