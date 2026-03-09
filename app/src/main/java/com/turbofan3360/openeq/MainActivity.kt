@@ -12,12 +12,13 @@ import android.os.IBinder
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.app.ActivityCompat
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 
 import com.turbofan3360.openeq.ui.screens.MainScreen
@@ -42,13 +43,17 @@ class MainActivityViewModel: ViewModel() {
 
 class MainActivity : ComponentActivity() {
     private val foregroundServiceIntent: Intent by lazy{Intent(this, EQMediaListenerService::class.java)}
+    val myViewModel: MainActivityViewModel by viewModels()
 
-    // Object to bind to the foreground service
+    // Class to bind to the foreground service
     private var eqService: EQMediaListenerService? = null
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             val binder = service as EQMediaListenerService.LocalBinder
             eqService = binder.getService()
+
+            // Calls the service to set the current EQ levels
+            eqService?.updateEqLevels(myViewModel.eqLevels)
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
@@ -62,18 +67,22 @@ class MainActivity : ComponentActivity() {
 
         // Handles starting the app UI
         setContent {
-            val myViewModel: MainActivityViewModel = viewModel()
             OpenEQTheme {
                 MainScreen(
                     myViewModel.eqEnabled,
                     eqToggle = {
-                        myViewModel.eqEnabled = !myViewModel.eqEnabled
-                        // Handles starting/stopping the foreground service to listen for media streams starting
-                        if (myViewModel.eqEnabled) {
-                            startMediaListenService()
+                        // Handles starting/stopping the foreground service to handle EQ
+                        // If EQ not already enabled, then pressing the button means the user wants to enable it
+                        if (!myViewModel.eqEnabled) {
+                            // Started depends on whether or not the user allowed notifications
+                            // No notifications -> foreground service can't run
+                            val started = startMediaListenService()
+                            // If service started, the eqEnabled = true, and vice versa
+                            myViewModel.eqEnabled = started
                         }
                         else {
                             stopMediaListenService()
+                            myViewModel.eqEnabled = false
                         }
                                },
                     myViewModel.eqLevels,
@@ -98,13 +107,20 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
     }
 
-    private fun startMediaListenService() {
+    private fun startMediaListenService(): Boolean {
         // Checking for and requesting notification permission if not already given
-        checkNotificationPermission()
+        val permissionGranted = checkNotificationPermission()
+
+        if (!permissionGranted) {
+            return false
+        }
+
         // Starting the foreground service that listens for media streams starting
         this.startForegroundService(foregroundServiceIntent)
         // Binds to the service so new EQ levels can be passed in when the user sets them
         bindService(foregroundServiceIntent, connection, Context.BIND_AUTO_CREATE)
+
+        return true
     }
 
     private fun stopMediaListenService() {
@@ -114,21 +130,30 @@ class MainActivity : ComponentActivity() {
         stopService(foregroundServiceIntent)
     }
 
-    private fun checkNotificationPermission() {
+    private fun checkNotificationPermission(): Boolean {
         // Function to check whether notification permission is given, and request it if not
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // Checking notifications are enabled
-            val notificationPermission =
-                ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-
-            // Requesting permission if not enabled
-            if (notificationPermission == PackageManager.PERMISSION_DENIED) {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                    0
-                )
-            }
+        // Below Android 13, is permission automatically granted for notifications
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            return true
         }
+
+        // Checking whether notifications are enabled
+        val notificationPermission = ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+
+        // Requesting permission if not enabled
+        if (notificationPermission == PackageManager.PERMISSION_DENIED) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                0
+            )
+        }
+
+        // If permission still denied, return false
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_DENIED) {
+            return false
+        }
+
+        return true
     }
 }
