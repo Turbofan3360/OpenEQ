@@ -66,6 +66,8 @@ class EQMediaListenerService: Service() {
             ContextCompat.RECEIVER_EXPORTED
         )
 
+        isRunning = true
+
         return START_STICKY
     }
 
@@ -80,6 +82,8 @@ class EQMediaListenerService: Service() {
         for ((_, eqObj) in eqObjects) {
             delEqualizer(eqObj)
         }
+
+        isRunning = false
     }
 
     // Public function that lets you update the equalizer levels
@@ -140,6 +144,10 @@ class EQMediaListenerService: Service() {
             // Register the channel with the system
             notificationManager.createNotificationChannel(channel)
         }
+    }
+
+    companion object {
+        var isRunning = false
     }
 
     // ---------------------

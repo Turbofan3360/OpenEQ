@@ -70,22 +70,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Starts the app database to access stored preset info
-        // WARNING: DO NOT START THE DATABASE AGAIN ANYWHERE ELSE IN THE APP
-        appDb.buildDatabase(this)
-        // Launching coroutine to get the EQ levels from previous app close and save them in the view model
-        lifecycleScope.launch {
-            val values = appDb.getPreset("latest_eq_levels")
-            // Checking if a "latest_eq_levels" preset already exists, if so setting my EQ levels to it
-            if (values != null) {
-                myViewModel.eqLevels.clear()
-                myViewModel.eqLevels.addAll(values)
-            }
-            // If not - need to create one
-            else {
-                appDb.addPreset("latest_eq_levels", myViewModel.eqLevels.toList())
-            }
-        }
+        // Calls the function to initialize the database with stored app data
+        appDataInit()
+
+        // Re-binds to the foreground service if it was left running upon last app destruction
+        findMediaListenService()
 
         // Handles starting the app UI
         setContent {
@@ -132,6 +121,34 @@ class MainActivity : ComponentActivity() {
         }
         // Calls the onDestroy() of the parent class to properly destroy the activity
         super.onDestroy()
+    }
+
+    private fun appDataInit() {
+        // Starts the app database to access stored preset info
+        // WARNING: DO NOT START THE DATABASE AGAIN ANYWHERE ELSE IN THE APP
+        appDb.buildDatabase(this)
+        // Launching coroutine to get the EQ levels from previous app close and save them in the view model
+        lifecycleScope.launch {
+            val values = appDb.getPreset("latest_eq_levels")
+            // Checking if a "latest_eq_levels" preset already exists, if so setting my EQ levels to it
+            if (values != null) {
+                myViewModel.eqLevels.clear()
+                myViewModel.eqLevels.addAll(values)
+            }
+            // If not - need to create one
+            else {
+                appDb.addPreset("latest_eq_levels", myViewModel.eqLevels.toList())
+            }
+        }
+    }
+
+    private fun findMediaListenService() {
+        // Checks to see if the foreground service is running; if so it re-binds to it
+        if (EQMediaListenerService.isRunning) {
+            // Binds to the service so new EQ levels can be passed in when the user sets them, updates app state
+            bindService(foregroundServiceIntent, connection, Context.BIND_AUTO_CREATE)
+            myViewModel.eqEnabled = true
+        }
     }
 
     private fun startMediaListenService(): Boolean {
