@@ -33,6 +33,8 @@ class DatabaseHandler {
             EqPresetDatabase::class.java, "preset-database"
         ).build()
 
+        // TODO: Create "latest_eq_levels" entry if none already exists
+
         dbInitialized = true
     }
 
@@ -49,13 +51,18 @@ class DatabaseHandler {
     }
 
     suspend fun getPreset(stringPresetId: String): List<Float>? {
-        val presetLevelsJson = db?.userDao()?.getPreset(stringPresetId)
+        val presetLevelsJson: Preset = db?.userDao()?.getPreset(stringPresetId) ?: return null
 
-        return Gson().fromJson(presetLevelsJson?.eqLevels, Array<Float>::class.java).toList()
+        return Gson().fromJson(presetLevelsJson.eqLevels, Array<Float>::class.java).toList()
     }
 
     suspend fun getAllPresetIds(): List<String>? {
-        return db?.userDao()?.getPresetIds()
+        val presetIds = db?.userDao()?.getPresetIds()?.toMutableList() ?: return null
+
+        // Removes this preset ID which is just used for storing the most recent EQ levels
+        presetIds.remove("latest_eq_levels")
+
+        return presetIds.toList()
     }
 
 }
@@ -81,7 +88,7 @@ data class Preset(
 interface PresetDao {
     // Lets you select a certain preset from the database
     @Query("SELECT * FROM preset WHERE presetId = :wantedPresetId")
-    suspend fun getPreset(wantedPresetId: String): Preset
+    suspend fun getPreset(wantedPresetId: String): Preset?
 
     // Lets you grab all the preset ID strings
     @Query("SELECT presetId FROM Preset")
