@@ -43,6 +43,8 @@ class MainActivityViewModel: ViewModel() {
     val eqRange = getEqRange()
     // State of the sliders (and so EQ levels)
     var eqLevels = mutableStateListOf(*MutableList(eqFrequencyBands.size) {0f}.toTypedArray())
+    // List of preset ID strings
+    var presetIdStrings = mutableStateListOf<String>()
 }
 
 class MainActivity : ComponentActivity() {
@@ -50,7 +52,6 @@ class MainActivity : ComponentActivity() {
 
     private val foregroundServiceIntent: Intent by lazy{Intent(this, EQMediaListenerService::class.java)}
     private val appDb by lazy{DatabaseHandler()}
-    private var presetIdStrings: List<String>? = null
     // Class to bind to the foreground service
     private var eqService: EQMediaListenerService? = null
     private val connection = object : ServiceConnection {
@@ -76,7 +77,12 @@ class MainActivity : ComponentActivity() {
 
         // Getting preset IDs from the database
         lifecycleScope.launch {
-            presetIdStrings = appDb.getAllPresetIds()
+            val strings = appDb.getAllPresetIds()
+
+            if (strings != null) {
+                myViewModel.presetIdStrings.clear()
+                myViewModel.presetIdStrings.addAll(strings)
+            }
         }
 
         // Re-binds to the foreground service if it was left running upon last app destruction
@@ -110,7 +116,7 @@ class MainActivity : ComponentActivity() {
                                     },
                     frequencyBands = myViewModel.eqFrequencyBandsStr,
                     eqRange = myViewModel.eqRange,
-                    presetIds = presetIdStrings ?: listOf<String>(),
+                    presetIds = myViewModel.presetIdStrings,
                     onPresetSelect = {presetId -> loadPreset(presetId) },
                     onPresetSave = {presetId -> newPreset(presetId)}
                 )
@@ -165,7 +171,7 @@ class MainActivity : ComponentActivity() {
 
     private fun newPreset(id: String) {
         // Checking for no user input
-        if (id == "" || (presetIdStrings?.contains(id) ?: false)) {
+        if (id == "" || (myViewModel.presetIdStrings.contains(id))) {
             return
         }
 
@@ -173,7 +179,7 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
             appDb.addPreset(id, myViewModel.eqLevels)
             // Once preset added to database, adds the new preset ID to the list of preset ID string
-            presetIdStrings = presetIdStrings?.plus(id)
+            myViewModel.presetIdStrings += id
         }
     }
 

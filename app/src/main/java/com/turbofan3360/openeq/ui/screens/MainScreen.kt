@@ -15,10 +15,12 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextField
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.PowerSettingsNew
 import androidx.compose.material.icons.rounded.SettingsBackupRestore
@@ -96,13 +98,13 @@ fun MainScreen(
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     // Shifting everything to the right first
-                    horizontalArrangement = Arrangement.End,
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.Bottom
                 ) {
-                    // Adding the button to zero all sliders
-                    ResetButton(updateEqLevel, frequencyBands.size)
                     // Adding a dropdown selector for presets
                     PresetSelector(presetIds, onPresetSelect, onPresetSave)
+                    // Adding the button to zero all sliders
+                    ResetButton(updateEqLevel, frequencyBands.size)
                 }
             }
         },
@@ -332,14 +334,26 @@ private fun PresetSelector(
 
     ExposedDropdownMenuBox(
         expanded = selectorOpen,
-        onExpandedChange = { selectorOpen = it }
+        onExpandedChange = { selectorOpen = it },
     ) {
         // Text field that is shown in the dropdown menu box
         TextField(
             readOnly = true,
             state = textFieldState,
             label = { Text(stringResource(R.string.preset_selector_field_label)) },
-            textStyle = MaterialTheme.typography.bodySmall
+            textStyle = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                unfocusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                focusedTextColor = MaterialTheme.colorScheme.secondary,
+                unfocusedTextColor = MaterialTheme.colorScheme.secondary,
+                focusedLabelColor = MaterialTheme.colorScheme.primary,
+                unfocusedLabelColor = MaterialTheme.colorScheme.primary,
+                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                unfocusedIndicatorColor = MaterialTheme.colorScheme.primary
+            )
         )
         // Content of the dropdown menu items
         ExposedDropdownMenu(
@@ -420,6 +434,11 @@ private fun PresetNameDialog(
     // A pop-up dialog to request the user input a preset ID to save the current EQ levels to
     if (showDialog) {
         AlertDialog(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            iconContentColor = MaterialTheme.colorScheme.secondary,
+            titleContentColor = MaterialTheme.colorScheme.tertiary,
+            textContentColor = MaterialTheme.colorScheme.tertiary,
+
             icon = { Icon(
                 imageVector=Icons.Rounded.AddCircleOutline,
                 contentDescription=stringResource(R.string.preset_id_input_dialog_description)
@@ -466,7 +485,11 @@ private fun PresetNameDialog(
             text = { OutlinedTextField(
                 state = presetInputState,
                 label = { Text(stringResource(R.string.preset_id_input_field_label)) },
-                textStyle = MaterialTheme.typography.bodySmall
+                textStyle = MaterialTheme.typography.bodySmall,
+
+                colors = TextFieldDefaults.colors(
+                    unfocusedIndicatorColor = MaterialTheme.colorScheme.primary
+                )
             ) }
         )
     }
