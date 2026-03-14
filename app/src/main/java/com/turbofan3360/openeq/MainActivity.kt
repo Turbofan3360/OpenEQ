@@ -50,6 +50,7 @@ class MainActivity : ComponentActivity() {
 
     private val foregroundServiceIntent: Intent by lazy{Intent(this, EQMediaListenerService::class.java)}
     private val appDb by lazy{DatabaseHandler()}
+    private var presetIdStrings: List<String>? = null
     // Class to bind to the foreground service
     private var eqService: EQMediaListenerService? = null
     private val connection = object : ServiceConnection {
@@ -73,6 +74,11 @@ class MainActivity : ComponentActivity() {
         // Calls the function to initialize the database with stored app data
         appDataInit()
 
+        // Getting preset IDs from the database
+        lifecycleScope.launch {
+            presetIdStrings = appDb.getAllPresetIds()
+        }
+
         // Re-binds to the foreground service if it was left running upon last app destruction
         findMediaListenService()
 
@@ -95,7 +101,7 @@ class MainActivity : ComponentActivity() {
                             stopMediaListenService()
                             myViewModel.eqEnabled = false
                         }
-                               },
+                    },
                     myViewModel.eqLevels,
                     updateEqLevel = {index:Int, value:Float ->
                         myViewModel.eqLevels[index] = value
@@ -103,7 +109,10 @@ class MainActivity : ComponentActivity() {
                         eqService?.updateEqLevels(myViewModel.eqLevels)
                                     },
                     frequencyBands = myViewModel.eqFrequencyBandsStr,
-                    eqRange = myViewModel.eqRange
+                    eqRange = myViewModel.eqRange,
+                    presetIds = presetIdStrings ?: listOf<String>(),
+                    onPresetSelect = {presetId -> loadPreset(presetId) },
+                    onPresetSave = {presetId -> newPreset(presetId)}
                 )
             }
         }
@@ -142,6 +151,34 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun loadPreset(id: String) {
+        // Launches a coroutine to load the user-selected preset into the EQ levels state
+        lifecycleScope.launch {
+            val presetVals = appDb.getPreset(id)
+
+            if (presetVals != null) {
+                myViewModel.eqLevels.clear()
+                myViewModel.eqLevels.addAll(presetVals)
+            }
+        }
+    }
+
+    private fun newPreset(id: String) {
+        // Checking for no user input
+        if (id == "") {
+            return
+        }
+
+        // Launches a coroutine to save the current EQ levels as a new preset in the database
+        lifecycleScope.launch {
+            appDb.addPreset(id, myViewModel.eqLevels)
+            // Once preset added to database, adds the new preset ID to the list of preset ID string
+            presetIdStrings = presetIdStrings?.plus(id)
+        }
+    }
+
+    // -----------------------------------------------
+
     private fun findMediaListenService() {
         // Checks to see if the foreground service is running; if so it re-binds to it
         if (EQMediaListenerService.isRunning) {
@@ -173,6 +210,8 @@ class MainActivity : ComponentActivity() {
         // Stops the foreground service that listens for media streams starting
         stopService(foregroundServiceIntent)
     }
+
+    // -----------------------------------------------
 
     private fun checkNotificationPermission(): Boolean {
         // Function to check whether notification permission is given, and request it if not

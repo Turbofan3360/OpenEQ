@@ -13,11 +13,18 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.TextField
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.PowerSettingsNew
 import androidx.compose.material.icons.rounded.SettingsBackupRestore
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.AddCircleOutline
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.padding
@@ -29,6 +36,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
@@ -36,6 +45,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.Alignment
@@ -49,10 +59,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
-import androidx.compose.runtime.mutableStateListOf
 import android.content.res.Configuration
-import com.turbofan3360.openeq.R
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 
+import com.turbofan3360.openeq.R
 import com.turbofan3360.openeq.ui.components.VerticalSlider
 import com.turbofan3360.openeq.ui.utils.roundOneDP
 import com.turbofan3360.openeq.ui.utils.generateSplineControlPoint
@@ -64,7 +74,10 @@ fun MainScreen(
     eqLevels: MutableList<Float>,
     updateEqLevel: (Int, Float) -> Unit,
     frequencyBands: List<String>,
-    eqRange: List<Float>
+    eqRange: List<Float>,
+    presetIds: List<String>,
+    onPresetSelect: (String) -> Unit,
+    onPresetSave: (String) -> Unit
 ) {
     // Saving state of thumb positions on sliders
     val thumbPositions = remember { mutableStateListOf(*MutableList(frequencyBands.size) {Offset.Zero}.toTypedArray()) }
@@ -89,6 +102,8 @@ fun MainScreen(
                 ) {
                     // Adding the button to zero all sliders
                     ResetButton(updateEqLevel, frequencyBands.size)
+                    // Adding a dropdown selector for presets
+                    PresetSelector(presetIds, onPresetSelect, onPresetSave)
                 }
             }
         },
@@ -267,7 +282,7 @@ private fun AppTitle() {
             IconButton(onClick={menuOpen = !menuOpen}) {
                 Icon(
                     imageVector=Icons.Rounded.Menu,
-                    contentDescription = "Options Menu",
+                    contentDescription = stringResource(R.string.menu_icon_description),
                     tint = MaterialTheme.colorScheme.tertiary
                 )
             }
@@ -292,7 +307,7 @@ private fun AppTitle() {
                     leadingIcon = {
                         Icon(
                             imageVector=Icons.Rounded.Info,
-                            contentDescription = "Information about the app",
+                            contentDescription = stringResource(R.string.menu_info_icon_description),
                             tint = MaterialTheme.colorScheme.secondary
                         )
                     },
@@ -302,6 +317,160 @@ private fun AppTitle() {
             }
         }
     )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PresetSelector(
+    presetIds: List<String>,
+    onPresetSelect: (String) -> Unit,
+    onPresetSave: (String) -> Unit
+    ) {
+    var selectorOpen by remember { mutableStateOf(false) }
+    var showTextInputDialog by remember { mutableStateOf(false) }
+    val placeholderText = stringResource(R.string.preset_selector_placeholder)
+    val textFieldState = rememberTextFieldState(placeholderText)
+
+    ExposedDropdownMenuBox(
+        expanded = selectorOpen,
+        onExpandedChange = { selectorOpen = it }
+    ) {
+        // Text field that is shown in the dropdown menu box
+        TextField(
+            readOnly = true,
+            state = textFieldState,
+            label = { Text(stringResource(R.string.preset_selector_field_label)) },
+            textStyle = MaterialTheme.typography.bodySmall
+        )
+        // Content of the dropdown menu items
+        ExposedDropdownMenu(
+            expanded = selectorOpen,
+            onDismissRequest = { selectorOpen = false }
+        ) {
+            // Button to select and save a new preset to the database
+            DropdownMenuItem(
+                onClick = {
+                    showTextInputDialog = true
+                    selectorOpen = false
+                },
+                text = {
+                    Text(
+                        stringResource(R.string.preset_selector_new_preset),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.secondary,
+                    )
+                }
+            )
+
+            // Placing a line between the new preset selector and other presets
+            HorizontalDivider()
+
+            // Button to go away from any particular preset
+            DropdownMenuItem(
+                onClick = {
+                    // TODO
+                    textFieldState.setTextAndPlaceCursorAtEnd(placeholderText)
+                    selectorOpen = false
+                },
+                text = {
+                    Text(
+                        placeholderText,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.secondary,
+                    )
+                }
+            )
+
+            // Iterating through string preset IDs
+            presetIds.forEach { option ->
+                DropdownMenuItem(
+                    onClick = {
+                        // Defining what happens when item in list selected
+                        onPresetSelect(option)
+                        textFieldState.setTextAndPlaceCursorAtEnd(option)
+                        selectorOpen = false
+                    },
+                    text = {
+                        // Styling the text for each drop down item
+                        Text(
+                            option,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.secondary,
+                        )
+                    }
+                )
+            }
+        }
+    }
+
+    PresetNameDialog(
+        showTextInputDialog,
+        onPresetSave,
+        onDismiss = { showTextInputDialog = false }
+    )
+}
+
+@Composable
+private fun PresetNameDialog(
+    showDialog: Boolean,
+    onPresetSave: (String) -> Unit,
+    onDismiss: () -> Unit
+    ) {
+    val presetInputState = rememberTextFieldState("")
+
+    // A pop-up dialog to request the user input a preset ID to save the current EQ levels to
+    if (showDialog) {
+        AlertDialog(
+            icon = { Icon(
+                imageVector=Icons.Rounded.AddCircleOutline,
+                contentDescription=stringResource(R.string.preset_id_input_dialog_description)
+            ) },
+            title = { Text(
+                    stringResource(R.string.preset_id_input_dialog_title),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary,
+            ) },
+            onDismissRequest =  {
+                onDismiss()
+                // Resetting text field state
+                presetInputState.setTextAndPlaceCursorAtEnd("")
+            },
+            confirmButton = { TextButton(
+                onClick = {
+                    // If preset ID entered + user confirms - save the preset ID to the database, then dismiss the dialog
+                    onPresetSave(presetInputState.text.toString())
+                    // Resetting text field state
+                    presetInputState.setTextAndPlaceCursorAtEnd("")
+                    onDismiss()
+                }
+                ) {
+                Text(
+                    stringResource(R.string.preset_id_input_confirm),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary,
+                )
+            } },
+            dismissButton = { TextButton(
+                onClick = {
+                    onDismiss()
+                    // Resetting text field state
+                    presetInputState.setTextAndPlaceCursorAtEnd("")
+                }
+            ) {
+                Text(
+                    stringResource(R.string.preset_id_input_dismiss),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary,
+                )
+            } },
+            // Actual input box for the user to enter their preset name
+            text = { OutlinedTextField(
+                state = presetInputState,
+                label = { Text(stringResource(R.string.preset_id_input_field_label)) },
+                textStyle = MaterialTheme.typography.bodySmall
+            ) }
+        )
+    }
 }
 
 @Composable
@@ -317,7 +486,7 @@ private fun PowerButton(eqEnabled: Boolean, eqToggle: () -> Unit) {
         // Setting the button icon
         Icon(
             imageVector=Icons.Rounded.PowerSettingsNew,
-            contentDescription="Toggle Equalizer On or Off"
+            contentDescription=stringResource(R.string.eq_toggle_button_description)
         )
     }
 }
@@ -331,7 +500,7 @@ private fun ResetButton(
     IconButton(onClick = {for (i in 0..<numEqBands) updateEqLevel(i, 0.0f)}) {
         Icon(
             imageVector = Icons.Rounded.SettingsBackupRestore,
-            contentDescription="Set all EQ channels back to 0"
+            contentDescription=stringResource(R.string.eq_reset_button_description)
         )
     }
 }

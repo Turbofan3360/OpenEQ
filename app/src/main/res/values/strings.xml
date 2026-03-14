@@ -1,8 +1,24 @@
 <resources>
     <string name="app_name">OpenEQ</string>
+
+    <string name="menu_icon_description">Options Menu</string>
     <string name="menu_info">About</string>
+    <string name="menu_info_icon_description">Information about the app</string>
 
     <string name="notification_info">OpenEQ is running a foreground service to detect media streams</string>
     <string name="notification_channel_name">Foreground Service</string>
     <string name="notification_channel_info">Notifications for the OpenEQ foreground service to detect streaming media</string>
+
+    <string name="eq_toggle_button_description">Toggle Equalizer On or Off</string>
+    <string name="eq_reset_button_description">Set all EQ channels back to 0</string>
+
+    <string name="preset_selector_placeholder">Choose Preset…</string>
+    <string name="preset_selector_new_preset">New Preset</string>
+    <string name="preset_selector_field_label">Select Preset Option</string>
+
+    <string name="preset_id_input_dialog_description">Input a name for your new equalizer preset</string>
+    <string name="preset_id_input_dialog_title">Input new preset name</string>
+    <string name="preset_id_input_confirm">Confirm</string>
+    <string name="preset_id_input_dismiss">Dismiss</string>
+    <string name="preset_id_input_field_label">Your preset name</string>
 </resources>
