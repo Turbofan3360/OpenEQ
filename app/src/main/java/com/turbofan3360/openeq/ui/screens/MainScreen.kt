@@ -60,7 +60,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import android.content.res.Configuration
-import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 
 import com.turbofan3360.openeq.R
 import com.turbofan3360.openeq.ui.components.VerticalSlider

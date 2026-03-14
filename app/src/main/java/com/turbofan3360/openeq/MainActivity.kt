@@ -165,7 +165,7 @@ class MainActivity : ComponentActivity() {
 
     private fun newPreset(id: String) {
         // Checking for no user input
-        if (id == "") {
+        if (id == "" || (presetIdStrings?.contains(id) ?: false)) {
             return
         }
 
