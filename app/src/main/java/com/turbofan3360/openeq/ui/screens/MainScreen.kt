@@ -53,6 +53,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -96,7 +97,9 @@ fun MainScreen(
             ) {
                 // Creating a row of items at the bottom of the screen
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(10.dp),
                     // Shifting everything to the right first
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.Bottom
@@ -220,7 +223,7 @@ private fun EQCurve(
         val path = Path()
 
         // Moving to the starting point (need to adjust for padding from other components)
-            path.moveTo(thumbPositions[0].x - sidePadding, thumbPositions[0].y - topPadding)
+        path.moveTo(thumbPositions[0].x - sidePadding, thumbPositions[0].y - topPadding)
 
         // Iterating through terms to add curves between thumb points on sliders to the path
         for (i in 0..(thumbPositions.size-2)) {
@@ -358,7 +361,8 @@ private fun PresetSelector(
         // Content of the dropdown menu items
         ExposedDropdownMenu(
             expanded = selectorOpen,
-            onDismissRequest = { selectorOpen = false }
+            onDismissRequest = { selectorOpen = false },
+            modifier = Modifier.background(MaterialTheme.colorScheme.primaryContainer)
         ) {
             // Button to select and save a new preset to the database
             DropdownMenuItem(
@@ -381,7 +385,6 @@ private fun PresetSelector(
             // Button to go away from any particular preset
             DropdownMenuItem(
                 onClick = {
-                    // TODO
                     textFieldState.setTextAndPlaceCursorAtEnd(placeholderText)
                     selectorOpen = false
                 },
