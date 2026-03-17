@@ -13,13 +13,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.TextField
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.TextField
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.PowerSettingsNew
@@ -27,6 +27,9 @@ import androidx.compose.material.icons.rounded.SettingsBackupRestore
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.AddCircleOutline
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Cached
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.padding
@@ -77,9 +80,12 @@ fun MainScreen(
     updateEqLevel: (Int, Float) -> Unit,
     frequencyBands: List<String>,
     eqRange: List<Float>,
+
     presetIds: List<String>,
     onPresetSelect: (String) -> Unit,
-    onPresetSave: (String) -> Unit
+    onPresetSave: (String) -> Unit,
+    onPresetDelete: (String) -> Unit,
+    onPresetUpdate: (String) -> Unit
 ) {
     // Saving state of thumb positions on sliders
     val thumbPositions = remember { mutableStateListOf(*MutableList(frequencyBands.size) {Offset.Zero}.toTypedArray()) }
@@ -88,7 +94,7 @@ fun MainScreen(
 
     Scaffold(
         // Creating the "OpenEQ" app bar at the top of the main screen
-        topBar = {AppTitle()},
+        topBar = {AppTitle(presetIds, onPresetSelect, onPresetSave, onPresetDelete, onPresetUpdate)},
         // Creating the bottom app bar with the reset sliders button
         bottomBar = {
             BottomAppBar(
@@ -104,8 +110,6 @@ fun MainScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.Bottom
                 ) {
-                    // Adding a dropdown selector for presets
-                    PresetSelector(presetIds, onPresetSelect, onPresetSave)
                     // Adding the button to zero all sliders
                     ResetButton(updateEqLevel, frequencyBands.size)
                 }
@@ -263,9 +267,21 @@ private fun EQCurve(
 // CenterAlignedTopAppBar is an experimental API so need to allow it
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AppTitle() {
+private fun AppTitle(
+    presetIds: List<String>,
+    onPresetSelect: (String) -> Unit,
+    onPresetSave: (String) -> Unit,
+    onPresetDelete: (String) -> Unit,
+    onPresetUpdate: (String) -> Unit
+    ) {
     val uriHandler = LocalUriHandler.current
     var menuOpen by remember { mutableStateOf(false) }
+
+    var savePresetDialogOpen by remember { mutableStateOf(false) }
+    var updatePresetDialogOpen by remember { mutableStateOf(false) }
+    var loadPresetDialogOpen by remember { mutableStateOf(false) }
+    var deletePresetDialogOpen by remember { mutableStateOf(false) }
+
     // Handles the app bar at the top of the UI
     CenterAlignedTopAppBar(
         // Making it look pretty
@@ -317,117 +333,188 @@ private fun AppTitle() {
                     },
                     onClick = { uriHandler.openUri("https://github.com/Turbofan3360/OpenEQ?tab=readme-ov-file#openeq") }
                 )
-                // TODO: Complete menu
-            }
-        }
-    )
-}
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun PresetSelector(
-    presetIds: List<String>,
-    onPresetSelect: (String) -> Unit,
-    onPresetSave: (String) -> Unit
-    ) {
-    var selectorOpen by remember { mutableStateOf(false) }
-    var showTextInputDialog by remember { mutableStateOf(false) }
-    val placeholderText = stringResource(R.string.preset_selector_placeholder)
-    val textFieldState = rememberTextFieldState(placeholderText)
+                // --------------------------------------------------------------
+                // Placing a line between the other things and the preset controls
+                HorizontalDivider()
 
-    ExposedDropdownMenuBox(
-        expanded = selectorOpen,
-        onExpandedChange = { selectorOpen = it },
-    ) {
-        // Text field that is shown in the dropdown menu box
-        TextField(
-            readOnly = true,
-            state = textFieldState,
-            label = { Text(stringResource(R.string.preset_selector_field_label)) },
-            textStyle = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
-
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                unfocusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                focusedTextColor = MaterialTheme.colorScheme.secondary,
-                unfocusedTextColor = MaterialTheme.colorScheme.secondary,
-                focusedLabelColor = MaterialTheme.colorScheme.primary,
-                unfocusedLabelColor = MaterialTheme.colorScheme.primary,
-                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                unfocusedIndicatorColor = MaterialTheme.colorScheme.primary
-            )
-        )
-        // Content of the dropdown menu items
-        ExposedDropdownMenu(
-            expanded = selectorOpen,
-            onDismissRequest = { selectorOpen = false },
-            modifier = Modifier.background(MaterialTheme.colorScheme.primaryContainer)
-        ) {
-            // Button to select and save a new preset to the database
-            DropdownMenuItem(
-                onClick = {
-                    showTextInputDialog = true
-                    selectorOpen = false
-                },
-                text = {
-                    Text(
-                        stringResource(R.string.preset_selector_new_preset),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.secondary,
-                    )
-                }
-            )
-
-            // Placing a line between the new preset selector and other presets
-            HorizontalDivider()
-
-            // Button to go away from any particular preset
-            DropdownMenuItem(
-                onClick = {
-                    textFieldState.setTextAndPlaceCursorAtEnd(placeholderText)
-                    selectorOpen = false
-                },
-                text = {
-                    Text(
-                        placeholderText,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.secondary,
-                    )
-                }
-            )
-
-            // Iterating through string preset IDs
-            presetIds.forEach { option ->
+                // Button to save current EQ values as a new preset to the database
                 DropdownMenuItem(
                     onClick = {
-                        // Defining what happens when item in list selected
-                        onPresetSelect(option)
-                        textFieldState.setTextAndPlaceCursorAtEnd(option)
-                        selectorOpen = false
+                        savePresetDialogOpen = true
                     },
                     text = {
-                        // Styling the text for each drop down item
                         Text(
-                            option,
+                            stringResource(R.string.menu_save_new_preset),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.secondary,
+                        )
+                    },
+                    // Icon at start of menu item
+                    leadingIcon = {
+                        Icon(
+                            imageVector=Icons.Rounded.AddCircleOutline,
+                            contentDescription = stringResource(R.string.menu_saveas_icon_description),
+                            tint = MaterialTheme.colorScheme.secondary
+                        )
+                    }
+                )
+
+                // Button to load a preset from the database
+                DropdownMenuItem(
+                    onClick = {
+                        loadPresetDialogOpen = true
+                    },
+                    text = {
+                        Text(
+                            stringResource(R.string.menu_load_preset),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.secondary,
+                        )
+                    },
+                    // Icon at start of menu item
+                    leadingIcon = {
+                        Icon(
+                            imageVector=Icons.Rounded.Cached,
+                            contentDescription = stringResource(R.string.menu_load_preset_icon_description),
+                            tint = MaterialTheme.colorScheme.secondary
+                        )
+                    }
+                )
+
+                // Button to update a preset in the database
+                DropdownMenuItem(
+                    onClick = {
+                        updatePresetDialogOpen = true
+                    },
+                    text = {
+                        Text(
+                            stringResource(R.string.menu_update_preset),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.secondary,
+                        )
+                    },
+                    // Icon at start of menu item
+                    leadingIcon = {
+                        Icon(
+                            imageVector=Icons.Rounded.Edit,
+                            contentDescription = stringResource(R.string.menu_update_preset_icon_description),
+                            tint = MaterialTheme.colorScheme.secondary
+                        )
+                    }
+                )
+
+                // Button to delete a preset from the database
+                DropdownMenuItem(
+                    onClick = {
+                        deletePresetDialogOpen = true
+                    },
+                    text = {
+                        Text(
+                            stringResource(R.string.menu_delete_preset),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.secondary,
+                        )
+                    },
+                    // Icon at start of menu item
+                    leadingIcon = {
+                        Icon(
+                            imageVector=Icons.Rounded.Delete,
+                            contentDescription = stringResource(R.string.menu_delete_preset_icon_description),
+                            tint = MaterialTheme.colorScheme.secondary
                         )
                     }
                 )
             }
         }
-    }
+    )
 
-    PresetNameDialog(
-        showTextInputDialog,
+    PresetSaveDialog(
+        savePresetDialogOpen,
         onPresetSave,
-        onDismiss = { showTextInputDialog = false }
+        onDismiss = { savePresetDialogOpen = false }
+    )
+
+    PresetUpdateDialog(
+        updatePresetDialogOpen,
+        presetIds,
+        onDismiss = { updatePresetDialogOpen = false },
+        onPresetUpdate
     )
 }
 
 @Composable
-private fun PresetNameDialog(
+private fun PresetUpdateDialog(
+    showDialog: Boolean,
+    presetIds: List<String>,
+    onDismiss: () -> Unit,
+    onPresetUpdate: (String) -> Unit
+    ){
+    var selectedPreset by remember{ mutableStateOf("") }
+
+    // Shows a dialog that allows the user to update and delete their presets
+    if (showDialog){
+        AlertDialog(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            iconContentColor = MaterialTheme.colorScheme.secondary,
+            titleContentColor = MaterialTheme.colorScheme.tertiary,
+            textContentColor = MaterialTheme.colorScheme.tertiary,
+
+            icon = { Icon(
+                imageVector=Icons.Rounded.Edit,
+                contentDescription=stringResource(R.string.edit_preset_dialog_description)
+            ) },
+            title = { Text(
+                stringResource(R.string.preset_edit_dialog_title),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.secondary,
+            ) },
+            onDismissRequest =  {
+                selectedPreset = ""
+                onDismiss()
+            },
+            confirmButton = { TextButton(
+                onClick = {
+                    onPresetUpdate(selectedPreset)
+                    selectedPreset = ""
+                    onDismiss()
+                }
+            ) {
+                Text(
+                    stringResource(R.string.preset_id_input_confirm),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            } },
+            dismissButton = { TextButton(
+                onClick = {
+                    selectedPreset = ""
+                    onDismiss()
+                }
+            ) {
+                Text(
+                    stringResource(R.string.dialog_dismiss),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            } },
+            text = {
+                Text(
+                    text = stringResource(R.string.edit_preset_dialog_description),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+                PresetIdsDropDown(
+                    presetIds,
+                    onSelect = { id -> selectedPreset = id }
+                )
+            }
+        )
+    }
+}
+
+@Composable
+private fun PresetSaveDialog(
     showDialog: Boolean,
     onPresetSave: (String) -> Unit,
     onDismiss: () -> Unit
@@ -479,7 +566,7 @@ private fun PresetNameDialog(
                 }
             ) {
                 Text(
-                    stringResource(R.string.preset_id_input_dismiss),
+                    stringResource(R.string.dialog_dismiss),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.secondary,
                 )
@@ -495,6 +582,67 @@ private fun PresetNameDialog(
                 )
             ) }
         )
+    }
+}
+
+@Composable
+private fun PresetLoadDialog() {}
+
+@Composable
+private fun PresetDeleteDialog() {}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PresetIdsDropDown(
+    presetIds: List<String>,
+    onSelect: (String) -> Unit
+    ) {
+    var dropdownOpen by remember{ mutableStateOf(false) }
+    val textFieldState = rememberTextFieldState("")
+
+    // Dropdown box to select a preset you want to do something to
+    ExposedDropdownMenuBox(
+        expanded = dropdownOpen,
+        onExpandedChange = { dropdownOpen = it }
+    ) {
+        TextField(
+            readOnly = true,
+            state = textFieldState,
+            label = { stringResource(R.string.preset_selector_field_label) },
+            textStyle = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                unfocusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                focusedTextColor = MaterialTheme.colorScheme.secondary,
+                unfocusedTextColor = MaterialTheme.colorScheme.secondary,
+                focusedLabelColor = MaterialTheme.colorScheme.primary,
+                unfocusedLabelColor = MaterialTheme.colorScheme.primary,
+                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                unfocusedIndicatorColor = MaterialTheme.colorScheme.primary
+            )
+        )
+        ExposedDropdownMenu(
+            expanded = dropdownOpen,
+            onDismissRequest = { dropdownOpen = false }) {
+            presetIds.forEach { id ->
+                DropdownMenuItem(
+                    onClick = {
+                        textFieldState.setTextAndPlaceCursorAtEnd(id)
+                        onSelect(id)
+                        dropdownOpen = false
+                    },
+                    text = {
+                        Text(
+                            text = id,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.secondary,
+                        )
+                    }
+                )
+            }
+        }
     }
 }
 

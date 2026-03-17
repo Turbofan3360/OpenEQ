@@ -12,6 +12,15 @@
     <string name="eq_toggle_button_description">Toggle Equalizer On or Off</string>
     <string name="eq_reset_button_description">Set all EQ channels back to 0</string>
 
+    <string name="menu_save_new_preset">Save as preset…</string>
+    <string name="menu_saveas_icon_description">Save current EQ levels as a preset</string>
+    <string name="menu_load_preset">Load Preset…</string>
+    <string name="menu_load_preset_icon_description">Select a preset to load from the database</string>
+    <string name="menu_update_preset">Update preset values</string>
+    <string name="menu_update_preset_icon_description">Update a preset in the database to the current EQ values</string>
+    <string name="menu_delete_preset">Delete preset</string>
+    <string name="menu_delete_preset_icon_description">Delete a preset from the database</string>
+
     <string name="preset_selector_placeholder">Choose Preset…</string>
     <string name="preset_selector_new_preset">New Preset</string>
     <string name="preset_selector_field_label">Select Preset:</string>
@@ -19,6 +28,11 @@
     <string name="preset_id_input_dialog_description">Input a name for your new equalizer preset</string>
     <string name="preset_id_input_dialog_title">Input New Preset Name:</string>
     <string name="preset_id_input_confirm">Confirm</string>
-    <string name="preset_id_input_dismiss">Cancel</string>
+    <string name="dialog_dismiss">Cancel</string>
     <string name="preset_id_input_field_label">Preset name:</string>
+
+    <string name="preset_edit_dialog_title">Edit Preset:</string>
+    <string name="edit_preset_dialog_description">Update the selected preset to the currently set equalizer levels</string>
+    <string name="update_button_preset_dialog">Update Preset</string>
+    <string name="delete_button_preset_dialog">Delete Preset</string>
 </resources>
