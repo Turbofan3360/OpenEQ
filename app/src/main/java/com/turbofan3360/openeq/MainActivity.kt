@@ -118,7 +118,9 @@ class MainActivity : ComponentActivity() {
                     eqRange = myViewModel.eqRange,
                     presetIds = myViewModel.presetIdStrings,
                     onPresetSelect = {presetId -> loadPreset(presetId) },
-                    onPresetSave = {presetId -> newPreset(presetId)}
+                    onPresetSave = {presetId -> newPreset(presetId)},
+                    onPresetDelete = {presetId -> deletePreset(presetId)},
+                    onPresetUpdate = {presetId -> updatePreset(presetId)}
                 )
             }
         }
@@ -171,7 +173,7 @@ class MainActivity : ComponentActivity() {
 
     private fun newPreset(id: String) {
         // Checking for no user input
-        if (id.isBlank() || (myViewModel.presetIdStrings.contains(id))) {
+        if (id.isBlank() || myViewModel.presetIdStrings.contains(id)) {
             return
         }
 
@@ -180,6 +182,32 @@ class MainActivity : ComponentActivity() {
             appDb.addPreset(id, myViewModel.eqLevels)
             // Once preset added to database, adds the new preset ID to the list of preset ID string
             myViewModel.presetIdStrings += id
+        }
+    }
+
+    private fun deletePreset(id: String) {
+        // Checking string ID is valid
+        if (id.isBlank() || !myViewModel.presetIdStrings.contains(id)) {
+            return
+        }
+
+        // Launches coroutine to remove preset from database
+        lifecycleScope.launch {
+            appDb.deletePreset(id)
+            // Once added to the database, can remove the preset ID string from the list
+            myViewModel.presetIdStrings.remove(id)
+        }
+    }
+
+    private fun updatePreset(id: String) {
+        // Checking string ID is valid
+        if (id.isBlank() || !myViewModel.presetIdStrings.contains(id)) {
+            return
+        }
+
+        // Launches coroutine to update preset in database to current EQ levels
+        lifecycleScope.launch {
+            appDb.updatePreset(id, myViewModel.eqLevels)
         }
     }
 
