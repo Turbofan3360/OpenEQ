@@ -61,6 +61,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
@@ -433,34 +434,128 @@ private fun AppTitle(
         }
     )
 
+    // Save preset dialog
     PresetSaveDialog(
         savePresetDialogOpen,
         onPresetSave,
         onDismiss = { savePresetDialogOpen = false }
     )
 
-    PresetUpdateDialog(
+    // Update preset dialog
+    PresetDialogStructure(
         updatePresetDialogOpen,
         presetIds,
         onPresetUpdate,
-        onDismiss = { updatePresetDialogOpen = false }
+        onDismiss = { updatePresetDialogOpen = false },
+        Icons.Rounded.Edit,
+        stringResource(R.string.update_preset_dialog_icon_description),
+        stringResource(R.string.update_preset_dialog_title),
+        stringResource(R.string.update_preset_dialog_text)
     )
 
-    PresetLoadDialog(
+    // Load preset dialog
+    PresetDialogStructure(
         loadPresetDialogOpen,
         presetIds,
         onPresetSelect,
-        onDismiss = { loadPresetDialogOpen = false }
+        onDismiss = { loadPresetDialogOpen = false },
+        Icons.Rounded.Cached,
+        stringResource(R.string.load_preset_dialog_icon_description),
+        stringResource(R.string.load_preset_dialog_title),
+        stringResource(R.string.load_preset_dialog_text)
     )
 
-    PresetDeleteDialog(
+    // Delete preset dialog
+    PresetDialogStructure(
         deletePresetDialogOpen,
         presetIds,
         onPresetDelete,
-        onDismiss = { deletePresetDialogOpen = false }
+        onDismiss = { deletePresetDialogOpen = false },
+        Icons.Rounded.Delete,
+        stringResource(R.string.delete_preset_dialog_icon_description),
+        stringResource(R.string.delete_preset_dialog_title),
+        stringResource(R.string.delete_preset_dialog_text)
     )
 }
 
+@Composable
+private fun PresetDialogStructure(
+    showDialog: Boolean,
+    presetIds: List<String>,
+    presetAction: (String) -> Unit,
+    onDismiss: () -> Unit,
+
+    iconImageVector: ImageVector,
+    iconDescription: String,
+    title: String,
+    bodyText: String
+) {
+    var selectedPreset by remember{ mutableStateOf("") }
+
+    // A pop-up dialog to request the user input a preset ID to save the current EQ levels to
+    if (showDialog) {
+        AlertDialog(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            iconContentColor = MaterialTheme.colorScheme.secondary,
+            titleContentColor = MaterialTheme.colorScheme.tertiary,
+            textContentColor = MaterialTheme.colorScheme.tertiary,
+
+            icon = { Icon(
+                imageVector=iconImageVector,
+                contentDescription=iconDescription
+            ) },
+            title = { Text(
+                title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.secondary,
+            ) },
+            onDismissRequest =  {
+                onDismiss()
+            },
+            confirmButton = { TextButton(
+                onClick = {
+                    presetAction(selectedPreset)
+                    onDismiss()
+                }
+            ) {
+                Text(
+                    stringResource(R.string.dialog_confirm),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            } },
+            dismissButton = { TextButton(
+                onClick = {
+                    onDismiss()
+                }
+            ) {
+                Text(
+                    stringResource(R.string.dialog_dismiss),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            } },
+            text = {
+                Column {
+                    Text(
+                        text = bodyText,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    PresetIdsDropDown(
+                        presetIds,
+                        onSelect = { id -> selectedPreset = id }
+                    )
+                }
+            }
+        )
+    }
+}
 
 @Composable
 private fun PresetSaveDialog(
@@ -543,232 +638,6 @@ private fun PresetSaveDialog(
                             unfocusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                             focusedContainerColor = MaterialTheme.colorScheme.primaryContainer
                         )
-                    )
-                }
-            }
-        )
-    }
-}
-
-@Composable
-private fun PresetUpdateDialog(
-    showDialog: Boolean,
-    presetIds: List<String>,
-    onPresetUpdate: (String) -> Unit,
-    onDismiss: () -> Unit
-    ){
-    var selectedPreset by remember{ mutableStateOf("") }
-
-    // Shows a dialog that allows the user to update and delete their presets
-    if (showDialog){
-        AlertDialog(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            iconContentColor = MaterialTheme.colorScheme.secondary,
-            titleContentColor = MaterialTheme.colorScheme.tertiary,
-            textContentColor = MaterialTheme.colorScheme.tertiary,
-
-            icon = { Icon(
-                imageVector=Icons.Rounded.Edit,
-                contentDescription=stringResource(R.string.update_preset_dialog_icon_description)
-            ) },
-            title = { Text(
-                stringResource(R.string.update_preset_dialog_title),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.secondary,
-            ) },
-            onDismissRequest =  {
-                onDismiss()
-            },
-            confirmButton = { TextButton(
-                onClick = {
-                    onPresetUpdate(selectedPreset)
-                    onDismiss()
-                }
-            ) {
-                Text(
-                    stringResource(R.string.dialog_confirm),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.secondary
-                )
-            } },
-            dismissButton = { TextButton(
-                onClick = {
-                    onDismiss()
-                }
-            ) {
-                Text(
-                    stringResource(R.string.dialog_dismiss),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.secondary
-                )
-            } },
-            text = {
-                Column {
-                    Text(
-                        text = stringResource(R.string.update_preset_dialog_text),
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth(),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.secondary
-                    )
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    PresetIdsDropDown(
-                        presetIds,
-                        onSelect = { id -> selectedPreset = id }
-                    )
-                }
-            }
-        )
-    }
-}
-
-@Composable
-private fun PresetLoadDialog(
-    showDialog: Boolean,
-    presetIds: List<String>,
-    onPresetLoad: (String) -> Unit,
-    onDismiss: () -> Unit
-) {
-    var selectedPreset by remember{ mutableStateOf("") }
-
-    // A pop-up dialog to request the user select a preset ID to load from the database
-    if (showDialog) {
-        AlertDialog(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            iconContentColor = MaterialTheme.colorScheme.secondary,
-            titleContentColor = MaterialTheme.colorScheme.tertiary,
-            textContentColor = MaterialTheme.colorScheme.tertiary,
-
-            icon = { Icon(
-                imageVector=Icons.Rounded.Cached,
-                contentDescription=stringResource(R.string.load_preset_dialog_icon_description)
-            ) },
-            title = { Text(
-                stringResource(R.string.load_preset_dialog_title),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.secondary,
-            ) },
-            onDismissRequest =  {
-                onDismiss()
-            },
-            confirmButton = { TextButton(
-                onClick = {
-                    // If preset ID entered + user confirms - load preset values from database, then dismiss the dialog
-                    onPresetLoad(selectedPreset)
-                    onDismiss()
-                }
-            ) {
-                Text(
-                    stringResource(R.string.dialog_confirm),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.secondary,
-                )
-            } },
-            dismissButton = { TextButton(
-                onClick = {
-                    onDismiss()
-                }
-            ) {
-                Text(
-                    stringResource(R.string.dialog_dismiss),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.secondary,
-                )
-            } },
-            // Dropdown for user to select preset name
-            text = {
-                Column {
-                    Text(
-                        text = stringResource(R.string.load_preset_dialog_text),
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth(),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.secondary
-                    )
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    PresetIdsDropDown(
-                        presetIds,
-                        onSelect = { id -> selectedPreset = id }
-                    )
-                }
-            }
-        )
-    }
-}
-
-@Composable
-private fun PresetDeleteDialog(
-    showDialog: Boolean,
-    presetIds: List<String>,
-    onPresetDelete: (String) -> Unit,
-    onDismiss: () -> Unit
-) {
-    var selectedPreset by remember{ mutableStateOf("") }
-
-    // A pop-up dialog to request the user select a preset ID to load from the database
-    if (showDialog) {
-        AlertDialog(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            iconContentColor = MaterialTheme.colorScheme.secondary,
-            titleContentColor = MaterialTheme.colorScheme.tertiary,
-            textContentColor = MaterialTheme.colorScheme.tertiary,
-
-            icon = { Icon(
-                imageVector=Icons.Rounded.Delete,
-                contentDescription=stringResource(R.string.delete_preset_dialog_icon_description)
-            ) },
-            title = { Text(
-                stringResource(R.string.delete_preset_dialog_title),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.secondary,
-            ) },
-            onDismissRequest =  {
-                onDismiss()
-            },
-            confirmButton = { TextButton(
-                onClick = {
-                    // If preset ID entered + user confirms - load preset values from database, then dismiss the dialog
-                    onPresetDelete(selectedPreset)
-                    onDismiss()
-                }
-            ) {
-                Text(
-                    stringResource(R.string.dialog_confirm),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.secondary,
-                )
-            } },
-            dismissButton = { TextButton(
-                onClick = {
-                    onDismiss()
-                }
-            ) {
-                Text(
-                    stringResource(R.string.dialog_dismiss),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.secondary,
-                )
-            } },
-            // Dropdown for user to select preset name
-            text = {
-                Column {
-                    Text(
-                        text = stringResource(R.string.delete_preset_dialog_text),
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth(),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.secondary
-                    )
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    PresetIdsDropDown(
-                        presetIds,
-                        onSelect = { id -> selectedPreset = id }
                     )
                 }
             }
