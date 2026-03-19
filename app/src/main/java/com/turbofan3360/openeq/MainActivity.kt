@@ -5,7 +5,6 @@ import android.content.pm.PackageManager
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.ComponentName
-import android.content.Context
 import android.os.Bundle
 import android.os.Build
 import android.os.IBinder
@@ -23,7 +22,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 
 import com.turbofan3360.openeq.ui.screens.MainScreen
 import com.turbofan3360.openeq.ui.theme.OpenEQTheme
@@ -32,7 +30,6 @@ import com.turbofan3360.openeq.audioprocessing.eqFrequenciesToLabels
 import com.turbofan3360.openeq.audioprocessing.EQMediaListenerService
 import com.turbofan3360.openeq.audioprocessing.getEqRange
 import com.turbofan3360.openeq.appdata.DatabaseHandler
-import kotlinx.coroutines.Dispatchers
 
 class MainActivityViewModel: ViewModel() {
     // State - whether EQ service is enabled or not
@@ -230,7 +227,7 @@ class MainActivity : ComponentActivity() {
         // Checks to see if the foreground service is running; if so it re-binds to it
         if (EQMediaListenerService.isRunning) {
             // Binds to the service so new EQ levels can be passed in when the user sets them, updates app state
-            bindService(foregroundServiceIntent, connection, Context.BIND_AUTO_CREATE)
+            bindService(foregroundServiceIntent, connection, BIND_AUTO_CREATE)
             myViewModel.eqEnabled = true
         }
     }
@@ -246,7 +243,7 @@ class MainActivity : ComponentActivity() {
         // Starting the foreground service that listens for media streams starting
         this.startForegroundService(foregroundServiceIntent)
         // Binds to the service so new EQ levels can be passed in when the user sets them
-        bindService(foregroundServiceIntent, connection, Context.BIND_AUTO_CREATE)
+        bindService(foregroundServiceIntent, connection, BIND_AUTO_CREATE)
 
         return true
     }
