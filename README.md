@@ -11,6 +11,7 @@ This is the repository for OpenEQ, an open-source, privacy respecting, and simpl
  - Privacy respecting
  	- Many common equalizers contain tracking libraries, advertising, or require a subscription. This project doesn't, and never will, do any of these.
  - Simple and clean UI
+ - User-defined equalizer presets
  - Fast and lightweight
 
 ### Installation: ###
@@ -32,7 +33,6 @@ Some media players require extra configuration to ensure they interface properly
 ### Features in development: ###
 
  - Presets for different music styles
- - User-defined presets
 
 ### Known limitations/issues: ###
 
