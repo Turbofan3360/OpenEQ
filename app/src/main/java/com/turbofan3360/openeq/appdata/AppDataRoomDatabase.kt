@@ -6,7 +6,6 @@ import androidx.room.PrimaryKey
 import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Database
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.RoomDatabase
