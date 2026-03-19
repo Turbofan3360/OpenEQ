@@ -206,6 +206,9 @@ class MainActivity : ComponentActivity() {
             for (i in 0..<myViewModel.eqLevels.size) {
                 myViewModel.eqLevels[i] = 0f
             }
+
+            // Sending updated EQ levels to the foreground service from the main thread
+            eqService?.updateEqLevels(myViewModel.eqLevels)
         }
     }
 
