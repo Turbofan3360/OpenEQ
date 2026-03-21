@@ -103,29 +103,22 @@ class EQMediaListenerService: Service() {
     }
 
     // Public function that lets you update whether or not the EQ tries to use the global mix
-    fun setTryGlobal(value: Boolean): Boolean {
+    fun setTryGlobal(value: Boolean) {
         tryGlobalMix = value
 
         // If the user has enabled global mix EQ, then create a global EQ instance and clear all the others
         if (tryGlobalMix) {
-            try {
-                val globalEq = addEqualizer(0)
-                setEqualizer(globalEq, eqLevels)
+            val globalEq = addEqualizer(0)
+            setEqualizer(globalEq, eqLevels)
 
-                // Releasing all EQ objects
-                for ((_, eqObj) in eqObjects) {
-                    delEqualizer(eqObj)
-                }
-                eqObjects.clear()
+            // Releasing all EQ objects
+            for ((_, eqObj) in eqObjects) {
+                delEqualizer(eqObj)
+            }
+            eqObjects.clear()
 
-                // Adding global EQ
-                eqObjects[0] = globalEq
-            }
-            catch(_: RuntimeException) {
-                tryGlobalMix = false
-                // Returning false lets the main activity know it needs to show an error message
-                return false
-            }
+            // Adding global EQ
+            eqObjects[0] = globalEq
         }
 
         // If global mix disabled AND global mix EQ object exists - release & remove the global EQ object
@@ -133,8 +126,6 @@ class EQMediaListenerService: Service() {
             delEqualizer(eqObjects[0]!!)
             eqObjects.remove(0)
         }
-
-        return true
     }
 
     private fun eqNotification() {

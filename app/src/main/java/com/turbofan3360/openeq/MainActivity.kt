@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.ComponentName
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.os.Build
 import android.os.IBinder
@@ -19,6 +20,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
@@ -30,11 +32,14 @@ import com.turbofan3360.openeq.audioprocessing.getEqBands
 import com.turbofan3360.openeq.audioprocessing.eqFrequenciesToLabels
 import com.turbofan3360.openeq.audioprocessing.EQMediaListenerService
 import com.turbofan3360.openeq.audioprocessing.getEqRange
+import com.turbofan3360.openeq.audioprocessing.globalEqAllowed
 import com.turbofan3360.openeq.appdata.DatabaseHandler
 
 class MainActivityViewModel: ViewModel() {
     // State - whether EQ service is enabled or not
     var eqEnabled by mutableStateOf(false)
+    // Whether the device supports global audio EQ
+    val globalAudioAllowed = globalEqAllowed()
     // Whether to try and attach the EQ to the global audio mix
     var tryGlobalAudio by mutableStateOf(false)
     // EQ frequency bands in milliHz
@@ -51,9 +56,11 @@ class MainActivityViewModel: ViewModel() {
 
 class MainActivity : ComponentActivity() {
     val myViewModel: MainActivityViewModel by viewModels()
+    
+    val sharedPref: SharedPreferences by lazy{getPreferences(MODE_PRIVATE)}
+    private val appDb by lazy{DatabaseHandler()}
 
     private val foregroundServiceIntent: Intent by lazy{Intent(this, EQMediaListenerService::class.java)}
-    private val appDb by lazy{DatabaseHandler()}
     // Class to bind to the foreground service
     private var eqService: EQMediaListenerService? = null
     private val connection = object : ServiceConnection {
@@ -61,8 +68,9 @@ class MainActivity : ComponentActivity() {
             val binder = service as EQMediaListenerService.LocalBinder
             eqService = binder.getService()
 
-            // Calls the service to set the current EQ levels
+            // Calls the service to pass the needed data
             eqService?.updateEqLevels(myViewModel.eqLevels)
+            eqService?.setTryGlobal(myViewModel.tryGlobalAudio)
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
@@ -76,6 +84,9 @@ class MainActivity : ComponentActivity() {
 
         // Calls the function to initialize the database with stored app data
         appDataInit()
+
+        // Calls the function to initialize stored app settings
+        appSettingsInit()
 
         // Getting preset IDs from the database
         lifecycleScope.launch {
@@ -113,16 +124,21 @@ class MainActivity : ComponentActivity() {
 
                     tryGlobal = myViewModel.tryGlobalAudio,
                     setGlobal = {
-                        // Tries to attach to the global audio mix in the foreground service
-                        myViewModel.tryGlobalAudio = it
-                        val result = eqService?.setTryGlobal(myViewModel.tryGlobalAudio)
+                        if (myViewModel.globalAudioAllowed) {
+                            // Tries to attach to the global audio mix in the foreground service
+                            myViewModel.tryGlobalAudio = it
+                            eqService?.setTryGlobal(myViewModel.tryGlobalAudio)
+                        }
 
-                        if (result == false) {
-                            // If an error occurs - probably because your device doesn't support global EQ (it's technically deprecated)
+                        else {
+                            // If device doesn't support global EQ (it's technically deprecated)
                             // Showing error message:
                             Toast.makeText(this, getString(R.string.global_mix_error_toast_message), Toast.LENGTH_LONG).show()
                             myViewModel.tryGlobalAudio = false
                         }
+
+                        // Saves app settings
+                        appSettingsSave()
                     },
 
                     eqLevels = myViewModel.eqLevels,
@@ -175,6 +191,21 @@ class MainActivity : ComponentActivity() {
             else {
                 appDb.addPreset("latest_eq_levels", myViewModel.eqLevels.toList())
             }
+        }
+    }
+
+    private fun appSettingsInit() {
+        // Grabs app settings from shared preferences (much simpler than the more modern data store)
+        // Currently only setting stored this way is whether attached to global audio mix or not
+
+        val globalAudioEnabled = sharedPref.getBoolean(getString(R.string.shared_preferences_global_mix_key), false)
+        myViewModel.tryGlobalAudio = globalAudioEnabled
+    }
+
+    private fun appSettingsSave() {
+        // Saves app settings to the shared preferences
+        sharedPref.edit {
+            putBoolean(getString(R.string.shared_preferences_global_mix_key), myViewModel.tryGlobalAudio)
         }
     }
 

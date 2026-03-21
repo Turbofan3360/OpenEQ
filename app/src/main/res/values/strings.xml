@@ -8,6 +8,7 @@
     <string name="menu_attach_global_mix">Attach To Global Mix</string>
     <string name="menu_attach_global_mix_icon_description">Attach the equalizer to the global audio mix (not supported on all devices)</string>
     <string name="global_mix_error_toast_message">ERROR: Global mix not supported on your device (deprecated)</string>
+    <string name="shared_preferences_global_mix_key">global_mix_enabled</string>
 
     <string name="notification_info">OpenEQ is running a foreground service to detect media streams</string>
     <string name="notification_channel_name">Foreground Service</string>
