@@ -1,6 +1,7 @@
 package com.turbofan3360.openeq.audioprocessing
 
 import android.media.audiofx.Equalizer
+import android.media.MediaPlayer
 import kotlin.math.round
 
 // A series of utility functions to help the code manage equalizer instances
@@ -33,8 +34,11 @@ fun setEqualizer(
 }
 
 fun getEqBands(): List<Float> {
+    // Creates a temporary media player so it can grab a valid audio session ID, and get EQ bands
+    val tempMediaPlayer = MediaPlayer()
+
     // Returns a list of the center frequencies of the EQ bands available in Hz
-    val eqObj = addEqualizer(0)
+    val eqObj = addEqualizer(tempMediaPlayer.audioSessionId)
     val frequencies = mutableListOf<Float>()
 
     for (i in 0..<eqObj.numberOfBands) {
@@ -42,6 +46,7 @@ fun getEqBands(): List<Float> {
     }
 
     delEqualizer(eqObj)
+    tempMediaPlayer.release()
 
     return frequencies.toList()
 }
