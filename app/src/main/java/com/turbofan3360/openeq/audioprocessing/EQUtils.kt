@@ -81,3 +81,15 @@ fun eqFrequenciesToLabels(
 
     return labels.toList()
 }
+
+fun globalEqAllowed(): Boolean {
+    // Function that checks to see if an equalizer object attached to global session (id=0) is allowed by the device
+    try {
+        val eqObj = addEqualizer(0)
+
+        delEqualizer(eqObj)
+        return true
+    } catch(_: RuntimeException) {
+        return false
+    }
+}

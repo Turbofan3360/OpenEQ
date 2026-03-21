@@ -32,11 +32,14 @@ import com.turbofan3360.openeq.audioprocessing.getEqBands
 import com.turbofan3360.openeq.audioprocessing.eqFrequenciesToLabels
 import com.turbofan3360.openeq.audioprocessing.EQMediaListenerService
 import com.turbofan3360.openeq.audioprocessing.getEqRange
+import com.turbofan3360.openeq.audioprocessing.globalEqAllowed
 import com.turbofan3360.openeq.appdata.DatabaseHandler
 
 class MainActivityViewModel: ViewModel() {
     // State - whether EQ service is enabled or not
     var eqEnabled by mutableStateOf(false)
+    // Whether the device supports global audio EQ
+    val globalAudioAllowed = globalEqAllowed()
     // Whether to try and attach the EQ to the global audio mix
     var tryGlobalAudio by mutableStateOf(false)
     // EQ frequency bands in milliHz
@@ -121,12 +124,14 @@ class MainActivity : ComponentActivity() {
 
                     tryGlobal = myViewModel.tryGlobalAudio,
                     setGlobal = {
-                        // Tries to attach to the global audio mix in the foreground service
-                        myViewModel.tryGlobalAudio = it
-                        val result = eqService?.setTryGlobal(myViewModel.tryGlobalAudio)
+                        if (myViewModel.globalAudioAllowed) {
+                            // Tries to attach to the global audio mix in the foreground service
+                            myViewModel.tryGlobalAudio = it
+                            eqService?.setTryGlobal(myViewModel.tryGlobalAudio)
+                        }
 
-                        if (result == false) {
-                            // If an error occurs - probably because your device doesn't support global EQ (it's technically deprecated)
+                        else {
+                            // If device doesn't support global EQ (it's technically deprecated)
                             // Showing error message:
                             Toast.makeText(this, getString(R.string.global_mix_error_toast_message), Toast.LENGTH_LONG).show()
                             myViewModel.tryGlobalAudio = false
