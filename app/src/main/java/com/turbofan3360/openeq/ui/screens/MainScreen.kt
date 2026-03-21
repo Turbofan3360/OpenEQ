@@ -279,8 +279,6 @@ private fun AppTitle(
     onPresetDelete: (String) -> Unit,
     onPresetUpdate: (String) -> Unit
     ) {
-    val uriHandler = LocalUriHandler.current
-
     var menuOpen by remember { mutableStateOf(false) }
     var savePresetDialogOpen by remember { mutableStateOf(false) }
     var updatePresetDialogOpen by remember { mutableStateOf(false) }
@@ -294,6 +292,7 @@ private fun AppTitle(
             containerColor = MaterialTheme.colorScheme.background,
             titleContentColor = MaterialTheme.colorScheme.primary
         ),
+
         // App title text
         title = {
             Text(
@@ -301,6 +300,7 @@ private fun AppTitle(
                 style = MaterialTheme.typography.titleLarge
             )
         },
+
         // Menu handling
         actions = {
             // Creating menu button
@@ -318,44 +318,8 @@ private fun AppTitle(
                 onDismissRequest = {menuOpen = false},
                 modifier = Modifier.background(MaterialTheme.colorScheme.primaryContainer)
             ) {
-                // Menu items
-                DropdownMenuItem(
-                    // Menu item text
-                    text = { SmallSecondaryText(stringResource(R.string.menu_info)) },
-                    // Icon at start of menu item
-                    leadingIcon = {
-                        Icon(
-                            imageVector=Icons.Rounded.Info,
-                            contentDescription = stringResource(R.string.menu_info_icon_description),
-                            tint = MaterialTheme.colorScheme.secondary
-                        )
-                    },
-                    onClick = { uriHandler.openUri("https://github.com/Turbofan3360/OpenEQ?tab=readme-ov-file#openeq") }
-                )
+                ConfigMenuItems(tryGlobal, setGlobal)
 
-                // Checkbox selector to try attaching the EQ to the global mix
-                DropdownMenuItem(
-                    text = {
-                        SmallSecondaryText(stringResource(R.string.menu_attach_global_mix))
-                    },
-                    leadingIcon = {
-                        Icon(
-                            imageVector=Icons.Rounded.Language,
-                            contentDescription = stringResource(R.string.menu_attach_global_mix_icon_description),
-                            tint=MaterialTheme.colorScheme.secondary
-                        )
-                    },
-                    trailingIcon = {
-                        Checkbox(
-                            checked = tryGlobal,
-                            onCheckedChange = { setGlobal(!tryGlobal) },
-                            modifier = Modifier.padding(0.dp)
-                        )
-                    },
-                    onClick = { setGlobal(!tryGlobal) }
-                )
-
-                // --------------------------------------------------------------
                 // Placing a line between the other things and the preset controls
                 HorizontalDivider()
 
@@ -484,6 +448,53 @@ private fun AppTitle(
         stringResource(R.string.delete_preset_dialog_title),
         stringResource(R.string.delete_preset_dialog_text),
         "" // Element not used
+    )
+}
+
+@Composable
+private fun ConfigMenuItems(
+    tryGlobal: Boolean,
+    setGlobal: (Boolean) -> Unit
+    ) {
+    // Handles the menu items used to configure the equalizer
+
+    val uriHandler = LocalUriHandler.current
+
+    // About app item
+    DropdownMenuItem(
+        // Menu item text
+        text = { SmallSecondaryText(stringResource(R.string.menu_info)) },
+        // Icon at start of menu item
+        leadingIcon = {
+            Icon(
+                imageVector=Icons.Rounded.Info,
+                contentDescription = stringResource(R.string.menu_info_icon_description),
+                tint = MaterialTheme.colorScheme.secondary
+            )
+        },
+        onClick = { uriHandler.openUri("https://github.com/Turbofan3360/OpenEQ?tab=readme-ov-file#openeq") }
+    )
+
+    // Checkbox selector to try attaching the EQ to the global mix
+    DropdownMenuItem(
+        text = {
+            SmallSecondaryText(stringResource(R.string.menu_attach_global_mix))
+        },
+        leadingIcon = {
+            Icon(
+                imageVector=Icons.Rounded.Language,
+                contentDescription = stringResource(R.string.menu_attach_global_mix_icon_description),
+                tint=MaterialTheme.colorScheme.secondary
+            )
+        },
+        trailingIcon = {
+            Checkbox(
+                checked = tryGlobal,
+                onCheckedChange = { setGlobal(!tryGlobal) },
+                modifier = Modifier.padding(0.dp)
+            )
+        },
+        onClick = { setGlobal(!tryGlobal) }
     )
 }
 
