@@ -5,6 +5,10 @@
     <string name="menu_info">About</string>
     <string name="menu_info_icon_description">Information about the app</string>
 
+    <string name="menu_attach_global_mix">Attach To Global Mix</string>
+    <string name="menu_attach_global_mix_icon_description">Attach the equalizer to the global audio mix (not supported on all devices)</string>
+    <string name="global_mix_error_toast_message">ERROR: Global mix not supported on your device (deprecated)</string>
+
     <string name="notification_info">OpenEQ is running a foreground service to detect media streams</string>
     <string name="notification_channel_name">Foreground Service</string>
     <string name="notification_channel_info">Notifications for the OpenEQ foreground service to detect streaming media</string>

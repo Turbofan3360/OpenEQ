@@ -1,5 +1,9 @@
 package com.turbofan3360.openeq.audioprocessing
 
+
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -12,9 +16,6 @@ import android.media.audiofx.AudioEffect
 import android.media.audiofx.Equalizer
 import android.os.Binder
 import android.os.IBinder
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
 
 import com.turbofan3360.openeq.MainActivity
 import com.turbofan3360.openeq.R
@@ -31,6 +32,7 @@ class EQMediaListenerService: Service() {
     private val mediaStreamStopListener = MediaStreamStopReceiver()
     private var eqObjects = mutableMapOf<Int, Equalizer>()
     private var eqLevels = mutableListOf<Float>()
+    private var tryGlobalMix = false
     private var binder = LocalBinder()
 
     //---------------------------------
@@ -82,6 +84,7 @@ class EQMediaListenerService: Service() {
         for ((_, eqObj) in eqObjects) {
             delEqualizer(eqObj)
         }
+        eqObjects.clear()
 
         isRunning = false
     }
@@ -97,6 +100,41 @@ class EQMediaListenerService: Service() {
         for ((_, eqObj) in eqObjects) {
             setEqualizer(eqObj, eqLevels)
         }
+    }
+
+    // Public function that lets you update whether or not the EQ tries to use the global mix
+    fun setTryGlobal(value: Boolean): Boolean {
+        tryGlobalMix = value
+
+        // If the user has enabled global mix EQ, then create a global EQ instance and clear all the others
+        if (tryGlobalMix) {
+            try {
+                val globalEq = addEqualizer(0)
+                setEqualizer(globalEq, eqLevels)
+
+                // Releasing all EQ objects
+                for ((_, eqObj) in eqObjects) {
+                    delEqualizer(eqObj)
+                }
+                eqObjects.clear()
+
+                // Adding global EQ
+                eqObjects[0] = globalEq
+            }
+            catch(_: RuntimeException) {
+                tryGlobalMix = false
+                // Returning false lets the main activity know it needs to show an error message
+                return false
+            }
+        }
+
+        // If global mix disabled AND global mix EQ object exists - release & remove the global EQ object
+        else if (eqObjects.containsKey(0)) {
+            delEqualizer(eqObjects[0]!!)
+            eqObjects.remove(0)
+        }
+
+        return true
     }
 
     private fun eqNotification() {
@@ -157,6 +195,11 @@ class EQMediaListenerService: Service() {
     inner class MediaStreamStartReceiver: BroadcastReceiver() {
         // Defining what happens when it detects a media stream starting
         override fun onReceive(context: Context?, intent: Intent?) {
+            // If user wants to attach to the global mix - ignore all this
+            if (tryGlobalMix) {
+                return
+            }
+
             // Getting audio stream ID
             val mediaStreamID = intent?.getIntExtra(AudioEffect.EXTRA_AUDIO_SESSION, 0)
 
@@ -173,6 +216,11 @@ class EQMediaListenerService: Service() {
     inner class MediaStreamStopReceiver: BroadcastReceiver() {
         // Defining what happens when it detects a media stream ending
         override fun onReceive(context: Context?, intent: Intent?) {
+            // If user wants to attach to the global mix - ignore all this
+            if (tryGlobalMix) {
+                return
+            }
+
             // Getting audio stream ID
             val mediaStreamID = intent?.getIntExtra(AudioEffect.EXTRA_AUDIO_SESSION, 0)
 

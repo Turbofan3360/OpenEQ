@@ -8,6 +8,7 @@ import android.content.ComponentName
 import android.os.Bundle
 import android.os.Build
 import android.os.IBinder
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -34,6 +35,8 @@ import com.turbofan3360.openeq.appdata.DatabaseHandler
 class MainActivityViewModel: ViewModel() {
     // State - whether EQ service is enabled or not
     var eqEnabled by mutableStateOf(false)
+    // Whether to try and attach the EQ to the global audio mix
+    var tryGlobalAudio by mutableStateOf(false)
     // EQ frequency bands in milliHz
     val eqFrequencyBands = getEqBands()
     // String labels for EQ frequency bands
@@ -91,7 +94,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             OpenEQTheme {
                 MainScreen(
-                    myViewModel.eqEnabled,
+                    eqEnabled = myViewModel.eqEnabled,
                     eqToggle = {
                         // Handles starting/stopping the foreground service to handle EQ
                         // If EQ not already enabled, then pressing the button means the user wants to enable it
@@ -107,14 +110,31 @@ class MainActivity : ComponentActivity() {
                             myViewModel.eqEnabled = false
                         }
                     },
-                    myViewModel.eqLevels,
+
+                    tryGlobal = myViewModel.tryGlobalAudio,
+                    setGlobal = {
+                        // Tries to attach to the global audio mix in the foreground service
+                        myViewModel.tryGlobalAudio = it
+                        val result = eqService?.setTryGlobal(myViewModel.tryGlobalAudio)
+
+                        if (result == false) {
+                            // If an error occurs - probably because your device doesn't support global EQ (it's technically deprecated)
+                            // Showing error message:
+                            Toast.makeText(this, getString(R.string.global_mix_error_toast_message), Toast.LENGTH_LONG).show()
+                            myViewModel.tryGlobalAudio = false
+                        }
+                    },
+
+                    eqLevels = myViewModel.eqLevels,
                     updateEqLevel = {index:Int, value:Float ->
                         myViewModel.eqLevels[index] = value
                         // Passing updated EQ levels to the foreground service managing EQ objects
                         eqService?.updateEqLevels(myViewModel.eqLevels)
-                                    },
+                    },
+
                     frequencyBands = myViewModel.eqFrequencyBandsStr,
                     eqRange = myViewModel.eqRange,
+
                     presetIds = myViewModel.presetIdStrings,
                     onPresetSelect = {presetId -> loadPreset(presetId) },
                     onPresetSave = {presetId -> newPreset(presetId)},
