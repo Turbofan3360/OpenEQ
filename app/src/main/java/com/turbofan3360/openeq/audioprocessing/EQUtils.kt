@@ -4,6 +4,10 @@ import android.media.MediaPlayer
 import android.media.audiofx.Equalizer
 import kotlin.math.round
 
+private const val DECIBEL_TO_MILLIBEL = 100f
+private const val HERZ_TO_MILLIHERZ = 1000f
+private const val ONE_MEGAHERZ = 1000 // in Hz
+
 // A series of utility functions to help the code manage equalizer instances
 
 fun addEqualizer(
@@ -29,7 +33,7 @@ fun setEqualizer(
 ) {
     // Sets levels of an equalizer instance to the given values
     for (i in 0..<levels.size) {
-        eq.setBandLevel(i.toShort(), round(levels[i] * 100).toInt().toShort())
+        eq.setBandLevel(i.toShort(), round(levels[i] * DECIBEL_TO_MILLIBEL).toInt().toShort())
     }
 }
 
@@ -42,7 +46,7 @@ fun getEqBands(): List<Float> {
     val frequencies = mutableListOf<Float>()
 
     for (i in 0..<eqObj.numberOfBands) {
-        frequencies += eqObj.getCenterFreq(i.toShort())/1000f
+        frequencies += eqObj.getCenterFreq(i.toShort()) / HERZ_TO_MILLIHERZ
     }
 
     delEqualizer(eqObj)
@@ -57,7 +61,7 @@ fun getEqRange(): List<Float> {
     val eqRange = eqObj.getBandLevelRange()
     delEqualizer(eqObj)
 
-    return listOf(eqRange[0]/100f, eqRange[1]/100f)
+    return listOf(eqRange[0] / DECIBEL_TO_MILLIBEL, eqRange[1] / DECIBEL_TO_MILLIBEL)
 }
 
 fun eqFrequenciesToLabels(
@@ -68,13 +72,12 @@ fun eqFrequenciesToLabels(
     var baseStr: String
 
     for (freq in frequencyBands) {
-        if (freq < 1000) {
+        if (freq < ONE_MEGAHERZ) {
             // For frequencies below 1KHz - can just convert straight to string and add to list
             labels += freq.toString().dropLastWhile { it == '0' }.dropLastWhile { it == '.' }
-        }
-        else {
+        } else {
             // Generates nice "1K"/"2K"/e.t.c labels for frequencies above 1KHz
-            baseStr = (freq/1000f).toString().dropLastWhile { it == '0' }.dropLastWhile { it == '.' }
+            baseStr = (freq / HERZ_TO_MILLIHERZ).toString().dropLastWhile { it == '0' }.dropLastWhile { it == '.' }
             labels += "${baseStr}K"
         }
     }
@@ -89,7 +92,7 @@ fun globalEqAllowed(): Boolean {
 
         delEqualizer(eqObj)
         return true
-    } catch(_: RuntimeException) {
+    } catch (_: RuntimeException) {
         return false
     }
 }

@@ -1,11 +1,11 @@
 package com.turbofan3360.openeq
 
+import android.Manifest
 import android.content.ComponentName
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.content.ServiceConnection
 import android.content.SharedPreferences
-import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
@@ -21,46 +21,53 @@ import androidx.compose.runtime.setValue
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
-import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.ViewModel
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-
+import androidx.lifecycle.lifecycleScope
 import com.turbofan3360.openeq.appdata.DatabaseHandler
-import com.turbofan3360.openeq.audioprocessing.eqFrequenciesToLabels
 import com.turbofan3360.openeq.audioprocessing.EQMediaListenerService
+import com.turbofan3360.openeq.audioprocessing.eqFrequenciesToLabels
 import com.turbofan3360.openeq.audioprocessing.getEqBands
 import com.turbofan3360.openeq.audioprocessing.getEqRange
 import com.turbofan3360.openeq.audioprocessing.globalEqAllowed
 import com.turbofan3360.openeq.ui.screens.MainScreen
 import com.turbofan3360.openeq.ui.theme.OpenEQTheme
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
-class MainActivityViewModel: ViewModel() {
+class MainActivityViewModel : ViewModel() {
     // State - whether EQ service is enabled or not
     var eqEnabled by mutableStateOf(false)
+
     // Whether the device supports global audio EQ
     val globalAudioAllowed = globalEqAllowed()
+
     // Whether to try and attach the EQ to the global audio mix
     var tryGlobalAudio by mutableStateOf(false)
+
     // EQ frequency bands in milliHz
     val eqFrequencyBands = getEqBands()
+
     // String labels for EQ frequency bands
     val eqFrequencyBandsStr = eqFrequenciesToLabels(eqFrequencyBands)
+
     // Supported range of EQ bands (in dB)
     val eqRange = getEqRange()
+
     // State of the sliders (and so EQ levels)
-    var eqLevels = mutableStateListOf(*MutableList(eqFrequencyBands.size) {0f}.toTypedArray())
+    var eqLevels = mutableStateListOf(*MutableList(eqFrequencyBands.size) { 0f }.toTypedArray())
+
     // List of preset ID strings
     var presetIdStrings = mutableStateListOf<String>()
 }
 
 class MainActivity : ComponentActivity() {
     val myViewModel: MainActivityViewModel by viewModels()
-    
-    val sharedPref: SharedPreferences by lazy{getPreferences(MODE_PRIVATE)}
-    private val appDb by lazy{DatabaseHandler()}
 
-    private val foregroundServiceIntent: Intent by lazy{Intent(this, EQMediaListenerService::class.java)}
+    val sharedPref: SharedPreferences by lazy { getPreferences(MODE_PRIVATE) }
+    private val appDb by lazy { DatabaseHandler() }
+
+    private val foregroundServiceIntent: Intent by lazy { Intent(this, EQMediaListenerService::class.java) }
+
     // Class to bind to the foreground service
     private var eqService: EQMediaListenerService? = null
     private val connection = object : ServiceConnection {
@@ -115,8 +122,7 @@ class MainActivity : ComponentActivity() {
                             val started = startMediaListenService()
                             // If service started, the eqEnabled = true, and vice versa
                             myViewModel.eqEnabled = started
-                        }
-                        else {
+                        } else {
                             stopMediaListenService()
                             myViewModel.eqEnabled = false
                         }
@@ -128,9 +134,7 @@ class MainActivity : ComponentActivity() {
                             // Tries to attach to the global audio mix in the foreground service
                             myViewModel.tryGlobalAudio = it
                             eqService?.setTryGlobal(myViewModel.tryGlobalAudio)
-                        }
-
-                        else {
+                        } else {
                             // If device doesn't support global EQ (it's technically deprecated)
                             // Showing error message:
                             Toast.makeText(
@@ -147,7 +151,7 @@ class MainActivity : ComponentActivity() {
                     },
 
                     eqLevels = myViewModel.eqLevels,
-                    updateEqLevel = {index:Int, value:Float ->
+                    updateEqLevel = { index: Int, value: Float ->
                         myViewModel.eqLevels[index] = value
                         // Passing updated EQ levels to the foreground service managing EQ objects
                         eqService?.updateEqLevels(myViewModel.eqLevels)
@@ -157,10 +161,10 @@ class MainActivity : ComponentActivity() {
                     eqRange = myViewModel.eqRange,
 
                     presetIds = myViewModel.presetIdStrings,
-                    onPresetSelect = {presetId -> loadPreset(presetId) },
-                    onPresetSave = {presetId -> newPreset(presetId)},
-                    onPresetDelete = {presetId -> deletePreset(presetId)},
-                    onPresetUpdate = {presetId -> updatePreset(presetId)}
+                    onPresetSelect = { presetId -> loadPreset(presetId) },
+                    onPresetSave = { presetId -> newPreset(presetId) },
+                    onPresetDelete = { presetId -> deletePreset(presetId) },
+                    onPresetUpdate = { presetId -> updatePreset(presetId) }
                 )
             }
         }
@@ -321,25 +325,23 @@ class MainActivity : ComponentActivity() {
         }
 
         // Checking whether notifications are enabled
-        val notificationPermission = ActivityCompat.checkSelfPermission(
+        var notificationPermission = ActivityCompat.checkSelfPermission(
             this,
             Manifest.permission.POST_NOTIFICATIONS
         )
 
-        // Requesting permission if not enabled
+        // Requesting permission if not granted
         if (notificationPermission == PackageManager.PERMISSION_DENIED) {
             ActivityCompat.requestPermissions(
                 this,
                 arrayOf(Manifest.permission.POST_NOTIFICATIONS),
                 0
             )
+
+            notificationPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
         }
 
-        // If permission still denied, return false
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_DENIED) {
-            return false
-        }
-
-        return true
+        // If permission granted, return true
+        return notificationPermission == PackageManager.PERMISSION_GRANTED
     }
 }

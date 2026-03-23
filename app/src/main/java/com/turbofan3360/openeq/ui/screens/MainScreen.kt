@@ -1,79 +1,84 @@
 package com.turbofan3360.openeq.ui.screens
 
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.BottomAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.LargeFloatingActionButton
-import androidx.compose.material3.FabPosition
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuAnchorType
-import androidx.compose.material3.Checkbox
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.PowerSettingsNew
-import androidx.compose.material.icons.rounded.SettingsBackupRestore
-import androidx.compose.material.icons.rounded.Menu
-import androidx.compose.material.icons.rounded.Info
-import androidx.compose.material.icons.rounded.Save
-import androidx.compose.material.icons.rounded.Edit
-import androidx.compose.material.icons.rounded.Delete
-import androidx.compose.material.icons.rounded.Cached
-import androidx.compose.material.icons.rounded.Language
+import android.content.res.Configuration
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.Canvas
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Cached
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Language
+import androidx.compose.material.icons.rounded.Menu
+import androidx.compose.material.icons.rounded.PowerSettingsNew
+import androidx.compose.material.icons.rounded.Save
+import androidx.compose.material.icons.rounded.SettingsBackupRestore
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.FabPosition
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LargeFloatingActionButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.times
-import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import android.content.res.Configuration
-
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.times
 import com.turbofan3360.openeq.R
 import com.turbofan3360.openeq.ui.components.VerticalSlider
-import com.turbofan3360.openeq.ui.utils.roundOneDP
 import com.turbofan3360.openeq.ui.utils.generateSplineControlPoint
+import com.turbofan3360.openeq.ui.utils.roundOneDP
+
+private const val SLIDER_HEIGHT_SCALAR_PORTRAIT = 0.625f
+private const val SLIDER_HEIGHT_SCALAR_LANDSCAPE = 0.8f
+private const val SPACER_HEIGHT_SCALAR = 10
+private const val LANDSCAPE_SLIDERS_WIDTH_SCALAR = 0.85f
+private const val LANDSCAPE_PADDING_SIZE_SCALAR = 0.025f
 
 @Composable
 fun MainScreen(
@@ -93,13 +98,24 @@ fun MainScreen(
     onPresetUpdate: (String) -> Unit
 ) {
     // Saving state of thumb positions on sliders
-    val thumbPositions = remember { mutableStateListOf(*MutableList(frequencyBands.size) {Offset.Zero}.toTypedArray()) }
+    val thumbPositions =
+        remember { mutableStateListOf(*MutableList(frequencyBands.size) { Offset.Zero }.toTypedArray()) }
     // Grabbing screen orientation and setting it as boolean
     val isPortrait = (LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT)
 
     Scaffold(
         // Creating the "OpenEQ" app bar at the top of the main screen
-        topBar = {AppTitle(tryGlobal, setGlobal, presetIds, onPresetSelect, onPresetSave, onPresetDelete, onPresetUpdate)},
+        topBar = {
+            AppTitle(
+                tryGlobal,
+                setGlobal,
+                presetIds,
+                onPresetSelect,
+                onPresetSave,
+                onPresetDelete,
+                onPresetUpdate
+            )
+        },
         // Creating the bottom app bar with the reset sliders button
         bottomBar = {
             BottomAppBar(
@@ -108,7 +124,9 @@ fun MainScreen(
             ) {
                 // Creating a row of items at the bottom of the screen
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(10.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(10.dp),
                     // Shifting everything to the right first
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.Bottom
@@ -119,22 +137,38 @@ fun MainScreen(
             }
         },
         // Creating the EQ on/off toggle button at the bottom
-        floatingActionButton = {PowerButton(eqEnabled, eqToggle)},
+        floatingActionButton = { PowerButton(eqEnabled, eqToggle) },
         // Centering the EQ on/off toggle button
         floatingActionButtonPosition = if (isPortrait) FabPosition.Center else FabPosition.End
 
-        // Defining content: Draws a colored background that fills the page, draws the EQ Sliders on it, and then a curve between the EQ sliders
-        ) { innerPadding ->
+        // Defining content: Draws a colored background that fills the page
+        // Then draws the EQ Sliders on it, and then a curve between the EQ sliders
+    ) { innerPadding ->
         BoxWithConstraints(
-            modifier = Modifier.fillMaxSize().background(color=MaterialTheme.colorScheme.background).padding(paddingValues=innerPadding),
+            modifier = Modifier
+                .fillMaxSize()
+                .background(color = MaterialTheme.colorScheme.background)
+                .padding(paddingValues = innerPadding),
         ) {
             // Grabbing scope (i.e. box size) parameters
             val scope = this
 
-            val topPadding = with(LocalDensity.current) {innerPadding.calculateTopPadding().toPx()}
-            val sidePadding = with(LocalDensity.current) {innerPadding.calculateLeftPadding(LayoutDirection.Ltr).toPx()}
+            val topPadding = with(LocalDensity.current) { innerPadding.calculateTopPadding().toPx() }
+            val sidePadding =
+                with(LocalDensity.current) { innerPadding.calculateLeftPadding(LayoutDirection.Ltr).toPx() }
 
-            EQSliders(scope.maxHeight, scope.maxWidth, isPortrait, frequencyBands, eqRange[0], eqRange[1], eqLevels, updateEqLevel, thumbPositions)
+            EQSliders(
+                scope.maxHeight,
+                scope.maxWidth,
+                isPortrait,
+                frequencyBands,
+                eqRange[0],
+                eqRange[1],
+                eqLevels,
+                updateEqLevel,
+                thumbPositions
+            )
+
             // Drawing the curve on top of the EQ sliders
             EQCurve(MaterialTheme.colorScheme.primary, thumbPositions, topPadding, sidePadding)
         }
@@ -153,19 +187,30 @@ private fun EQSliders(
     updateEqLevel: (Int, Float) -> Unit,
     thumbPositions: MutableList<Offset>
 ) {
-    // Simple scaling of sliders and spacers to adapt to the screen size - changes scaling depending on screen orientation
-    val sliderHeight = if (isPortrait) 0.625f*boxHeight else 0.8f*boxHeight
-    val spacerHeight = (boxHeight-sliderHeight)/10
+    // Simple scaling of sliders and spacers to adapt to the screen size
+    // Changes scaling depending on screen orientation
+    val sliderHeight = if (isPortrait) {
+        SLIDER_HEIGHT_SCALAR_PORTRAIT * boxHeight
+    } else {
+        SLIDER_HEIGHT_SCALAR_LANDSCAPE * boxHeight
+    }
+
+    val spacerHeight = (boxHeight - sliderHeight) / SPACER_HEIGHT_SCALAR
 
     Row(
-        // Tweaks positioning of sliders depending on screen orientation
-        modifier = if (isPortrait) Modifier.fillMaxWidth() else Modifier.width(0.85f*boxWidth),
+        // Tweaks width of sliders depending on screen orientation
+        modifier = if (isPortrait) {
+            Modifier.fillMaxWidth()
+        } else {
+            Modifier.width(LANDSCAPE_SLIDERS_WIDTH_SCALAR * boxWidth)
+        },
+
         // Evenly spacing the EQ sliders across the screen
         horizontalArrangement = Arrangement.SpaceAround
     ) {
         // If in landscape: spacing things in from the screen edge a little bit
         if (!isPortrait) {
-            Spacer(modifier=Modifier.width(0.025f*boxWidth))
+            Spacer(modifier = Modifier.width(LANDSCAPE_PADDING_SIZE_SCALAR * boxWidth))
         }
         // Repeating the slider the right number of times across the screen
         repeat(frequencyBands.size) { sliderNo ->
@@ -177,7 +222,7 @@ private fun EQSliders(
             ) {
                 // Defines the column:
                 // Adding spacing
-                Spacer(modifier=Modifier.height(spacerHeight))
+                Spacer(modifier = Modifier.height(spacerHeight))
                 // EQ dB level text
                 Text(
                     "${roundOneDP(eqLevels[sliderNo])}",
@@ -186,7 +231,7 @@ private fun EQSliders(
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
                 // Adding spacing
-                Spacer(modifier=Modifier.height(spacerHeight))
+                Spacer(modifier = Modifier.height(spacerHeight))
                 // EQ level slider
                 VerticalSlider(
                     height = sliderHeight,
@@ -194,14 +239,14 @@ private fun EQSliders(
                     value = eqLevels[sliderNo],
                     // Modifying state variable when slider moved
                     onValueChange = { newValue -> updateEqLevel(sliderNo, roundOneDP(newValue)) },
-                    updateThumbPosition = {coordinates -> thumbPositions[sliderNo] = coordinates},
+                    updateThumbPosition = { coordinates -> thumbPositions[sliderNo] = coordinates },
                     trackColor = MaterialTheme.colorScheme.tertiary,
                     thumbColor = MaterialTheme.colorScheme.primary,
                     // Adapting slider range to be whatever the system supports
                     valueRange = eqMin..eqMax
                 )
                 // Adding spacing
-                Spacer(modifier=Modifier.height(spacerHeight))
+                Spacer(modifier = Modifier.height(spacerHeight))
                 // Frequency band text
                 Text(
                     // Displaying frequency band in Hz
@@ -215,7 +260,6 @@ private fun EQSliders(
     }
 }
 
-
 @Composable
 private fun EQCurve(
     pathColor: Color,
@@ -228,35 +272,50 @@ private fun EQCurve(
         modifier = Modifier.fillMaxSize()
     ) {
         val path = Path()
+        var pointOne: Offset
+        var pointTwo: Offset
 
         // Moving to the starting point (need to adjust for padding from other components)
         path.moveTo(thumbPositions[0].x - sidePadding, thumbPositions[0].y - topPadding)
 
         // Iterating through terms to add curves between thumb points on sliders to the path
-        for (i in 0..(thumbPositions.size-2)) {
+        for (i in 0..(thumbPositions.size - 2)) {
+            // Handling edge case with first point
+            pointOne = if (i == 0) {
+                Offset(x = thumbPositions[0].x * 0.5f, y = thumbPositions[0].y)
+            } else {
+                thumbPositions[i - 1]
+            }
+
+            // Handling edge case with final point
+            pointTwo = if (i == thumbPositions.size - 2) {
+                Offset(
+                    x = thumbPositions[thumbPositions.size - 1].x + 20,
+                    y = thumbPositions[thumbPositions.size - 1].y
+                )
+            } else {
+                thumbPositions[i + 2]
+            }
+
             // Finding curve control points
             val (point1, point2) = generateSplineControlPoint(
-                // Handling edge case with first point
-                if (i!=0) thumbPositions[i-1] else Offset(x=thumbPositions[0].x*0.5f, y=thumbPositions[0].y),
+                pointOne,
                 thumbPositions[i],
-                thumbPositions[i+1],
-                // Handling edge case with final point
-                if (i!=thumbPositions.size-2) thumbPositions[i+2] else Offset(
-                    x=thumbPositions[thumbPositions.size-1].x+20,
-                    y=thumbPositions[thumbPositions.size-1].y
-                )
+                thumbPositions[i + 1],
+                pointTwo
             )
+
             // Adding another curve to the spline
             path.cubicTo(
                 // Control point 1
-                x1 = point1.x-sidePadding,
-                y1 = point1.y-topPadding,
+                x1 = point1.x - sidePadding,
+                y1 = point1.y - topPadding,
                 // Control point 2
-                x2 = point2.x-sidePadding,
-                y2 = point2.y-topPadding,
+                x2 = point2.x - sidePadding,
+                y2 = point2.y - topPadding,
                 // Destination point
-                x3 = thumbPositions[i+1].x-sidePadding,
-                y3 = thumbPositions[i+1].y-topPadding
+                x3 = thumbPositions[i + 1].x - sidePadding,
+                y3 = thumbPositions[i + 1].y - topPadding
             )
         }
         // Drawing the path
@@ -306,9 +365,9 @@ private fun AppTitle(
         // Menu handling
         actions = {
             // Creating menu button
-            IconButton(onClick={menuOpen = !menuOpen}) {
+            IconButton(onClick = { menuOpen = !menuOpen }) {
                 Icon(
-                    imageVector=Icons.Rounded.Menu,
+                    imageVector = Icons.Rounded.Menu,
                     contentDescription = stringResource(R.string.menu_icon_description),
                     tint = MaterialTheme.colorScheme.tertiary
                 )
@@ -317,7 +376,7 @@ private fun AppTitle(
             DropdownMenu(
                 // Handling whether it's expanded or not, and what happens when it's closed
                 expanded = menuOpen,
-                onDismissRequest = {menuOpen = false},
+                onDismissRequest = { menuOpen = false },
                 modifier = Modifier.background(MaterialTheme.colorScheme.primaryContainer)
             ) {
                 ConfigMenuItems(tryGlobal, setGlobal)
@@ -335,7 +394,7 @@ private fun AppTitle(
                     // Icon at start of menu item
                     leadingIcon = {
                         Icon(
-                            imageVector=Icons.Rounded.Save,
+                            imageVector = Icons.Rounded.Save,
                             contentDescription = stringResource(R.string.menu_save_as_icon_description),
                             tint = MaterialTheme.colorScheme.secondary
                         )
@@ -352,7 +411,7 @@ private fun AppTitle(
                     // Icon at start of menu item
                     leadingIcon = {
                         Icon(
-                            imageVector=Icons.Rounded.Cached,
+                            imageVector = Icons.Rounded.Cached,
                             contentDescription = stringResource(R.string.menu_load_preset_icon_description),
                             tint = MaterialTheme.colorScheme.secondary
                         )
@@ -369,7 +428,7 @@ private fun AppTitle(
                     // Icon at start of menu item
                     leadingIcon = {
                         Icon(
-                            imageVector=Icons.Rounded.Edit,
+                            imageVector = Icons.Rounded.Edit,
                             contentDescription = stringResource(R.string.menu_update_preset_icon_description),
                             tint = MaterialTheme.colorScheme.secondary
                         )
@@ -386,7 +445,7 @@ private fun AppTitle(
                     // Icon at start of menu item
                     leadingIcon = {
                         Icon(
-                            imageVector=Icons.Rounded.Delete,
+                            imageVector = Icons.Rounded.Delete,
                             contentDescription = stringResource(R.string.menu_delete_preset_icon_description),
                             tint = MaterialTheme.colorScheme.secondary
                         )
@@ -469,7 +528,7 @@ private fun ConfigMenuItems(
         // Icon at start of menu item
         leadingIcon = {
             Icon(
-                imageVector=Icons.Rounded.Info,
+                imageVector = Icons.Rounded.Info,
                 contentDescription = stringResource(R.string.menu_info_icon_description),
                 tint = MaterialTheme.colorScheme.secondary
             )
@@ -484,9 +543,9 @@ private fun ConfigMenuItems(
         },
         leadingIcon = {
             Icon(
-                imageVector=Icons.Rounded.Language,
+                imageVector = Icons.Rounded.Language,
                 contentDescription = stringResource(R.string.menu_attach_global_mix_icon_description),
-                tint=MaterialTheme.colorScheme.secondary
+                tint = MaterialTheme.colorScheme.secondary
             )
         },
         trailingIcon = {
@@ -514,7 +573,7 @@ private fun PresetDialogStructure(
     bodyText: String,
     textFieldLabel: String
 ) {
-    var selectedPreset by remember{ mutableStateOf("") }
+    var selectedPreset by remember { mutableStateOf("") }
     val presetInputState = rememberTextFieldState("")
 
     // A pop-up dialog to request the user input a preset ID to save the current EQ levels to
@@ -525,41 +584,46 @@ private fun PresetDialogStructure(
             titleContentColor = MaterialTheme.colorScheme.tertiary,
             textContentColor = MaterialTheme.colorScheme.tertiary,
 
-            icon = { Icon(
-                imageVector=iconImageVector,
-                contentDescription=iconDescription
-            ) },
-            title = { Text(
-                title,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.secondary,
-            ) },
-            onDismissRequest =  {
+            icon = {
+                Icon(
+                    imageVector = iconImageVector,
+                    contentDescription = iconDescription
+                )
+            },
+            title = {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.secondary,
+                )
+            },
+            onDismissRequest = {
                 onDismiss()
                 // Resetting text field state
                 presetInputState.setTextAndPlaceCursorAtEnd("")
             },
-            confirmButton = { TextButton(
-                onClick = {
-                    if (isDropdown) {
-                        presetAction(selectedPreset)
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (isDropdown) {
+                            presetAction(selectedPreset)
+                        } else {
+                            presetAction(presetInputState.text.toString())
+                        }
+                        onDismiss()
+                        // Resetting text field state
+                        presetInputState.setTextAndPlaceCursorAtEnd("")
                     }
-                    else {
-                        presetAction(presetInputState.text.toString())
-                    }
-                    onDismiss()
-                    // Resetting text field state
-                    presetInputState.setTextAndPlaceCursorAtEnd("")
-                }
-            ) { SmallSecondaryText(stringResource(R.string.dialog_confirm)) }
+                ) { SmallSecondaryText(stringResource(R.string.dialog_confirm)) }
             },
-            dismissButton = { TextButton(
-                onClick = {
-                    onDismiss()
-                    // Resetting text field state
-                    presetInputState.setTextAndPlaceCursorAtEnd("")
-                }
-            ) { SmallSecondaryText(stringResource(R.string.dialog_dismiss)) }
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        onDismiss()
+                        // Resetting text field state
+                        presetInputState.setTextAndPlaceCursorAtEnd("")
+                    }
+                ) { SmallSecondaryText(stringResource(R.string.dialog_dismiss)) }
             },
             text = {
                 Column {
@@ -580,8 +644,7 @@ private fun PresetDialogStructure(
                             presetIds,
                             onSelect = { id -> selectedPreset = id }
                         )
-                    }
-                    else {
+                    } else {
                         OutlinedTextField(
                             state = presetInputState,
                             label = { Text(textFieldLabel) },
@@ -607,7 +670,7 @@ private fun PresetIdsDropDown(
     presetIds: List<String>,
     onSelect: (String) -> Unit
 ) {
-    var dropdownOpen by remember{ mutableStateOf(false) }
+    var dropdownOpen by remember { mutableStateOf(false) }
     val textFieldState = rememberTextFieldState(stringResource(R.string.preset_dropdown_field_default))
 
     // Dropdown box to select a preset you want to do something to
@@ -631,7 +694,8 @@ private fun PresetIdsDropDown(
         )
         ExposedDropdownMenu(
             expanded = dropdownOpen,
-            onDismissRequest = { dropdownOpen = false }) {
+            onDismissRequest = { dropdownOpen = false }
+        ) {
             presetIds.forEach { id ->
                 DropdownMenuItem(
                     onClick = {
@@ -659,16 +723,15 @@ private fun SmallSecondaryText(inputText: String) {
 private fun PowerButton(eqEnabled: Boolean, eqToggle: () -> Unit) {
     // Handles the button to toggle the EQ on or off
     LargeFloatingActionButton(
-        onClick = {eqToggle()},
-        shape= CircleShape,
+        onClick = { eqToggle() },
+        shape = CircleShape,
         // Changing button color depending on whether EQ is enabled or not
         containerColor = if (eqEnabled) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.secondary
-    )
-    {
+    ) {
         // Setting the button icon
         Icon(
-            imageVector=Icons.Rounded.PowerSettingsNew,
-            contentDescription=stringResource(R.string.eq_toggle_button_description)
+            imageVector = Icons.Rounded.PowerSettingsNew,
+            contentDescription = stringResource(R.string.eq_toggle_button_description)
         )
     }
 }
@@ -679,10 +742,10 @@ private fun ResetButton(
     numEqBands: Int
 ) {
     // Handles the button that resets all the sliders to 0 dB
-    IconButton(onClick = {for (i in 0..<numEqBands) updateEqLevel(i, 0.0f)}) {
+    IconButton(onClick = { for (i in 0..<numEqBands) updateEqLevel(i, 0.0f) }) {
         Icon(
             imageVector = Icons.Rounded.SettingsBackupRestore,
-            contentDescription=stringResource(R.string.eq_reset_button_description)
+            contentDescription = stringResource(R.string.eq_reset_button_description)
         )
     }
 }

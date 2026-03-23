@@ -13,7 +13,6 @@ import androidx.room.RoomDatabase
 import androidx.room.Update
 import com.google.gson.Gson
 
-
 // Class for the user to easily handle the database, serializing and de-serializing data
 class DatabaseHandler {
     private var db: EqPresetDatabase? = null
