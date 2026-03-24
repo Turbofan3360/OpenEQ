@@ -89,27 +89,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Calls the function to initialize the database with stored app data
+        // Function that handles initialization of app state (database, shared preferences, finding foreground service)
         appDataInit()
-
-        // Calls the function to initialize stored app settings
-        myViewModel.tryGlobalAudio = appSettings.getAppSettingBoolean(
-            getString(R.string.shared_preferences_global_mix_key),
-            false
-        )
-
-        // Getting preset IDs from the database
-        lifecycleScope.launch {
-            val strings = appDb.getAllPresetIds()
-
-            if (strings != null) {
-                myViewModel.presetIdStrings.clear()
-                myViewModel.presetIdStrings.addAll(strings)
-            }
-        }
-
-        // Re-binds to the foreground service if it was left running upon last app destruction
-        findMediaListenService()
 
         // Handles starting the app UI
         setContent {
@@ -117,13 +98,11 @@ class MainActivity : ComponentActivity() {
                 MainScreen(
                     eqEnabled = myViewModel.eqEnabled,
                     eqToggle = {
-                        // Handles starting/stopping the foreground service to handle EQ
-                        // If EQ not already enabled, then pressing the button means the user wants to enable it
+                        // Handles starting/stopping the EQ foreground service
+                        // If EQ not already enabled, enable it:
                         if (!myViewModel.eqEnabled) {
-                            // Started depends on whether or not the user allowed notifications
-                            // No notifications -> foreground service can't run
+                            // Started depends on whether user allowed notifications (notification permission required)
                             val started = startMediaListenService()
-                            // If service started, the eqEnabled = true, and vice versa
                             myViewModel.eqEnabled = started
                         } else {
                             stopMediaListenService()
@@ -133,13 +112,12 @@ class MainActivity : ComponentActivity() {
 
                     tryGlobal = myViewModel.tryGlobalAudio,
                     setGlobal = {
+                        // Toggles whether to attach EQ to the global audio mix (not supported on all devices)
                         if (myViewModel.globalAudioAllowed) {
-                            // Tries to attach to the global audio mix in the foreground service
                             myViewModel.tryGlobalAudio = it
                             eqService?.updateTryGlobalAudio(myViewModel.tryGlobalAudio)
                         } else {
-                            // If device doesn't support global EQ (it's technically deprecated)
-                            // Showing error message:
+                            // If device doesn't support global EQ, show an error message
                             Toast.makeText(
                                 this,
                                 getString(R.string.global_mix_error_toast_message),
@@ -191,6 +169,30 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun appDataInit() {
+        // Calls the function to initialize the database with stored app data
+        appDatabaseInit()
+
+        // Calls the function to initialize stored app settings
+        myViewModel.tryGlobalAudio = appSettings.getAppSettingBoolean(
+            getString(R.string.shared_preferences_global_mix_key),
+            false
+        )
+
+        // Getting preset IDs from the database
+        lifecycleScope.launch {
+            val strings = appDb.getAllPresetIds()
+
+            if (strings != null) {
+                myViewModel.presetIdStrings.clear()
+                myViewModel.presetIdStrings.addAll(strings)
+            }
+        }
+
+        // Re-binds to the foreground service if it was left running upon last app destruction
+        findMediaListenService()
+    }
+
+    private fun appDatabaseInit() {
         // Starts the app database to access stored preset info
         // WARNING: DO NOT START THE DATABASE AGAIN ANYWHERE ELSE IN THE APP
         appDb.buildDatabase(this)
@@ -225,8 +227,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun newPreset(id: String) {
-        // Checking for no user input
-        if (id.isBlank() || myViewModel.presetIdStrings.contains(id)) {
+        if (!validatePresetId(id)) {
             return
         }
 
@@ -239,8 +240,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun deletePreset(id: String) {
-        // Checking string ID is valid
-        if (id.isBlank() || !myViewModel.presetIdStrings.contains(id)) {
+        if (!validatePresetId(id)) {
             return
         }
 
@@ -261,8 +261,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun updatePreset(id: String) {
-        // Checking string ID is valid
-        if (id.isBlank() || !myViewModel.presetIdStrings.contains(id)) {
+        if (!validatePresetId(id)) {
             return
         }
 
@@ -270,6 +269,14 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
             appDb.updatePreset(id, myViewModel.eqLevels)
         }
+    }
+
+    private fun validatePresetId(id: String): Boolean {
+        // Checks given preset ID is valid
+        if (id.isBlank() || !myViewModel.presetIdStrings.contains(id)) {
+            return false
+        }
+        return true
     }
 
     // -----------------------------------------------
@@ -305,8 +312,6 @@ class MainActivity : ComponentActivity() {
         // Stops the foreground service that listens for media streams starting
         stopService(foregroundServiceIntent)
     }
-
-    // -----------------------------------------------
 
     private fun checkNotificationPermission(): Boolean {
         // Function to check whether notification permission is given, and request it if not
