@@ -25,7 +25,7 @@ import androidx.core.content.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.lifecycleScope
 import com.turbofan3360.openeq.appdata.DatabaseHandler
-import com.turbofan3360.openeq.audioprocessing.EQMediaListenerService
+import com.turbofan3360.openeq.audioprocessing.EqForegroundService
 import com.turbofan3360.openeq.audioprocessing.eqFrequenciesToLabels
 import com.turbofan3360.openeq.audioprocessing.getEqBands
 import com.turbofan3360.openeq.audioprocessing.getEqRange
@@ -67,18 +67,18 @@ class MainActivity : ComponentActivity() {
     val sharedPref: SharedPreferences by lazy { getPreferences(MODE_PRIVATE) }
     private val appDb by lazy { DatabaseHandler() }
 
-    private val foregroundServiceIntent: Intent by lazy { Intent(this, EQMediaListenerService::class.java) }
+    private val foregroundServiceIntent: Intent by lazy { Intent(this, EqForegroundService::class.java) }
 
     // Class to bind to the foreground service
-    private var eqService: EQMediaListenerService? = null
+    private var eqService: EqForegroundService? = null
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            val binder = service as EQMediaListenerService.LocalBinder
+            val binder = service as EqForegroundService.LocalBinder
             eqService = binder.getService()
 
             // Calls the service to pass the needed data
             eqService?.updateEqLevels(myViewModel.eqLevels)
-            eqService?.setTryGlobal(myViewModel.tryGlobalAudio)
+            eqService?.updateTryGlobalAudio(myViewModel.tryGlobalAudio)
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
@@ -134,7 +134,7 @@ class MainActivity : ComponentActivity() {
                         if (myViewModel.globalAudioAllowed) {
                             // Tries to attach to the global audio mix in the foreground service
                             myViewModel.tryGlobalAudio = it
-                            eqService?.setTryGlobal(myViewModel.tryGlobalAudio)
+                            eqService?.updateTryGlobalAudio(myViewModel.tryGlobalAudio)
                         } else {
                             // If device doesn't support global EQ (it's technically deprecated)
                             // Showing error message:
@@ -286,7 +286,7 @@ class MainActivity : ComponentActivity() {
 
     private fun findMediaListenService() {
         // Checks to see if the foreground service is running; if so it re-binds to it
-        if (EQMediaListenerService.isRunning) {
+        if (EqForegroundService.isRunning) {
             // Binds to the service so new EQ levels can be passed in when the user sets them, updates app state
             bindService(foregroundServiceIntent, connection, BIND_AUTO_CREATE)
             myViewModel.eqEnabled = true

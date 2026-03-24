@@ -22,7 +22,7 @@ private const val PERMANENT_NOTIFICATION_ID = 1
 private const val NOTIFICATION_CHANNEL_ID = "eq_service_channel"
 
 // Foreground service that listens for media streams starting and then attaches equalizers to them
-class EQMediaListenerService : Service() {
+class EqForegroundService : Service() {
     // Initializes on first access to variable
     private val notificationManager: NotificationManager by lazy {
         getSystemService(NOTIFICATION_SERVICE) as NotificationManager
@@ -39,7 +39,7 @@ class EQMediaListenerService : Service() {
     // Handles binding to this service
     // ---------------------------------
     inner class LocalBinder : Binder() {
-        fun getService() = this@EQMediaListenerService
+        fun getService() = this@EqForegroundService
     }
 
     override fun onBind(intent: Intent): IBinder {
@@ -103,7 +103,7 @@ class EQMediaListenerService : Service() {
     }
 
     // Public function that lets you update whether or not the EQ tries to use the global mix
-    fun setTryGlobal(value: Boolean) {
+    fun updateTryGlobalAudio(value: Boolean) {
         tryGlobalMix = value
 
         // If the user has enabled global mix EQ, then create a global EQ instance and clear all the others

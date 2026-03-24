@@ -29,7 +29,7 @@
             </intent-filter>
         </activity>
         <service
-            android:name="com.turbofan3360.openeq.audioprocessing.EQMediaListenerService"
+            android:name="com.turbofan3360.openeq.audioprocessing.EqForegroundService"
             android:foregroundServiceType="mediaPlayback"
             android:enabled="true"
             android:exported="false">
