@@ -1,13 +1,6 @@
 package com.turbofan3360.openeq
 
-import android.Manifest
-import android.content.ComponentName
-import android.content.Intent
-import android.content.ServiceConnection
-import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
-import android.os.IBinder
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -18,13 +11,11 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.lifecycleScope
 import com.turbofan3360.openeq.appdata.DatabaseHandler
 import com.turbofan3360.openeq.appdata.SharedPreferencesSettings
-import com.turbofan3360.openeq.audioprocessing.EqForegroundService
+import com.turbofan3360.openeq.audioprocessing.ForegroundServiceHandler
 import com.turbofan3360.openeq.audioprocessing.eqFrequenciesToLabels
 import com.turbofan3360.openeq.audioprocessing.getEqBands
 import com.turbofan3360.openeq.audioprocessing.getEqRange
@@ -65,25 +56,7 @@ class MainActivity : ComponentActivity() {
 
     val appSettings by lazy { SharedPreferencesSettings(this) }
     private val appDb by lazy { DatabaseHandler() }
-
-    private val foregroundServiceIntent: Intent by lazy { Intent(this, EqForegroundService::class.java) }
-
-    // Class to bind to the foreground service
-    private var eqService: EqForegroundService? = null
-    private val connection = object : ServiceConnection {
-        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            val binder = service as EqForegroundService.LocalBinder
-            eqService = binder.getService()
-
-            // Calls the service to pass the needed data
-            eqService?.updateEqLevels(myViewModel.eqLevels)
-            eqService?.updateTryGlobalAudio(myViewModel.tryGlobalAudio)
-        }
-
-        override fun onServiceDisconnected(name: ComponentName?) {
-            eqService = null
-        }
-    }
+    private val foregroundServiceHandler by lazy { ForegroundServiceHandler(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -102,10 +75,14 @@ class MainActivity : ComponentActivity() {
                         // If EQ not already enabled, enable it:
                         if (!myViewModel.eqEnabled) {
                             // Started depends on whether user allowed notifications (notification permission required)
-                            val started = startMediaListenService()
+                            val started = foregroundServiceHandler.startMediaListenService(
+                                this,
+                                myViewModel.eqLevels,
+                                myViewModel.tryGlobalAudio
+                            )
                             myViewModel.eqEnabled = started
                         } else {
-                            stopMediaListenService()
+                            foregroundServiceHandler.stopMediaListenService()
                             myViewModel.eqEnabled = false
                         }
                     },
@@ -115,7 +92,7 @@ class MainActivity : ComponentActivity() {
                         // Toggles whether to attach EQ to the global audio mix (not supported on all devices)
                         if (myViewModel.globalAudioAllowed) {
                             myViewModel.tryGlobalAudio = it
-                            eqService?.updateTryGlobalAudio(myViewModel.tryGlobalAudio)
+                            foregroundServiceHandler.updateGlobalAudio(myViewModel.tryGlobalAudio)
                         } else {
                             // If device doesn't support global EQ, show an error message
                             Toast.makeText(
@@ -138,7 +115,7 @@ class MainActivity : ComponentActivity() {
                     updateEqLevel = { index: Int, value: Float ->
                         myViewModel.eqLevels[index] = value
                         // Passing updated EQ levels to the foreground service managing EQ objects
-                        eqService?.updateEqLevels(myViewModel.eqLevels)
+                        foregroundServiceHandler.updateEqLevels(myViewModel.eqLevels)
                     },
 
                     frequencyBands = myViewModel.eqFrequencyBandsStr,
@@ -161,9 +138,7 @@ class MainActivity : ComponentActivity() {
         }
 
         // Unbinds from the foreground service if it's bound
-        if (eqService != null) {
-            unbindService(connection)
-        }
+        foregroundServiceHandler.unbindForegroundService()
         // Calls the onDestroy() of the parent class to properly destroy the activity
         super.onDestroy()
     }
@@ -189,13 +164,18 @@ class MainActivity : ComponentActivity() {
         }
 
         // Re-binds to the foreground service if it was left running upon last app destruction
-        findMediaListenService()
+        foregroundServiceHandler.findMediaListenService(
+            { myViewModel.eqEnabled = true },
+            myViewModel.eqLevels,
+            myViewModel.tryGlobalAudio
+        )
     }
 
     private fun appDatabaseInit() {
         // Starts the app database to access stored preset info
         // WARNING: DO NOT START THE DATABASE AGAIN ANYWHERE ELSE IN THE APP
         appDb.buildDatabase(this)
+
         // Launching coroutine to get the EQ levels from previous app close and save them in the view model
         lifecycleScope.launch {
             val values = appDb.getPreset("latest_eq_levels")
@@ -221,7 +201,7 @@ class MainActivity : ComponentActivity() {
                 myViewModel.eqLevels.addAll(presetVals)
 
                 // Sending updated EQ levels to the foreground service from the main thread
-                eqService?.updateEqLevels(myViewModel.eqLevels)
+                foregroundServiceHandler.updateEqLevels(myViewModel.eqLevels)
             }
         }
     }
@@ -240,7 +220,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun deletePreset(id: String) {
-        if (!validatePresetId(id)) {
+        if (!myViewModel.presetIdStrings.contains(id)) {
             return
         }
 
@@ -256,12 +236,12 @@ class MainActivity : ComponentActivity() {
             }
 
             // Sending updated EQ levels to the foreground service from the main thread
-            eqService?.updateEqLevels(myViewModel.eqLevels)
+            foregroundServiceHandler.updateEqLevels(myViewModel.eqLevels)
         }
     }
 
     private fun updatePreset(id: String) {
-        if (!validatePresetId(id)) {
+        if (!myViewModel.presetIdStrings.contains(id)) {
             return
         }
 
@@ -273,71 +253,9 @@ class MainActivity : ComponentActivity() {
 
     private fun validatePresetId(id: String): Boolean {
         // Checks given preset ID is valid
-        if (id.isBlank() || !myViewModel.presetIdStrings.contains(id)) {
+        if (id.isBlank() || myViewModel.presetIdStrings.contains(id)) {
             return false
         }
         return true
-    }
-
-    // -----------------------------------------------
-
-    private fun findMediaListenService() {
-        // Checks to see if the foreground service is running; if so it re-binds to it
-        if (EqForegroundService.isRunning) {
-            // Binds to the service so new EQ levels can be passed in when the user sets them, updates app state
-            bindService(foregroundServiceIntent, connection, BIND_AUTO_CREATE)
-            myViewModel.eqEnabled = true
-        }
-    }
-
-    private fun startMediaListenService(): Boolean {
-        // Checking for and requesting notification permission if not already given
-        val permissionGranted = checkNotificationPermission()
-
-        if (!permissionGranted) {
-            return false
-        }
-
-        // Starting the foreground service that listens for media streams starting
-        this.startForegroundService(foregroundServiceIntent)
-        // Binds to the service so new EQ levels can be passed in when the user sets them
-        bindService(foregroundServiceIntent, connection, BIND_AUTO_CREATE)
-
-        return true
-    }
-
-    private fun stopMediaListenService() {
-        // Unbinds from foreground service
-        unbindService(connection)
-        // Stops the foreground service that listens for media streams starting
-        stopService(foregroundServiceIntent)
-    }
-
-    private fun checkNotificationPermission(): Boolean {
-        // Function to check whether notification permission is given, and request it if not
-        // Below Android 13, is permission automatically granted for notifications
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            return true
-        }
-
-        // Checking whether notifications are enabled
-        var notificationPermission = ActivityCompat.checkSelfPermission(
-            this,
-            Manifest.permission.POST_NOTIFICATIONS
-        )
-
-        // Requesting permission if not granted
-        if (notificationPermission == PackageManager.PERMISSION_DENIED) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                0
-            )
-
-            notificationPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-        }
-
-        // If permission granted, return true
-        return notificationPermission == PackageManager.PERMISSION_GRANTED
     }
 }
