@@ -4,10 +4,15 @@ import androidx.compose.ui.geometry.Offset
 
 fun roundOneDP(floatValue: Float): Float {
     // Utility to round floats to one decimal place
-    return (floatValue * 10f).toInt() / 10f
+    if (floatValue >= 0) {
+        return (floatValue * 10f + 0.5f).toInt() / 10f
+    }
+    else {
+        return (floatValue * 10f - 0.5f).toInt() / 10f
+    }
 }
 
-fun generateSplineControlPoint(
+fun generateSplineControlPoints(
     prevPoint: Offset,
     point: Offset,
     nextPoint: Offset,

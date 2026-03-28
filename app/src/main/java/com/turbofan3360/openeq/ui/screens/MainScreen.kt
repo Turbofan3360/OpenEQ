@@ -65,7 +65,7 @@ import com.turbofan3360.openeq.ui.components.LoadPresetDialog
 import com.turbofan3360.openeq.ui.components.SavePresetDialog
 import com.turbofan3360.openeq.ui.components.UpdatePresetDialog
 import com.turbofan3360.openeq.ui.components.VerticalSlider
-import com.turbofan3360.openeq.ui.utils.generateSplineControlPoint
+import com.turbofan3360.openeq.ui.utils.generateSplineControlPoints
 import com.turbofan3360.openeq.ui.utils.roundOneDP
 
 private const val SLIDER_HEIGHT_SCALAR_PORTRAIT = 0.625f
@@ -284,7 +284,7 @@ private fun EQCurve(
             }
 
             // Finding curve control points
-            val (point1, point2) = generateSplineControlPoint(
+            val (point1, point2) = generateSplineControlPoints(
                 pointOne,
                 thumbPositions[i],
                 thumbPositions[i + 1],
