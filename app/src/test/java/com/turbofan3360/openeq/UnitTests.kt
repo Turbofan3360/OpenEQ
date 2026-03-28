@@ -46,8 +46,6 @@ class UnitTests {
 
         assertOffsetEquals(Offset(x=8f, y=5.5f), p3)
         assertOffsetEquals(Offset(x=10f, y=9.5f), p4)
-
-        // val controlPoint1 = point + (nextPoint - prevPoint) / 6f
     }
 
     fun assertOffsetEquals(
