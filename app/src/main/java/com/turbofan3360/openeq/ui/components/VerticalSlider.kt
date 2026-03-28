@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.ColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -13,7 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -32,8 +32,7 @@ fun VerticalSlider(
     value: Float,
     onValueChange: (Float) -> Unit,
     updateThumbPosition: (Offset) -> Unit,
-    trackColor: Color,
-    thumbColor: Color,
+    colors: ColorScheme,
     valueRange: List<Float>
 ) {
     // Draws and handles a vertical slider component
@@ -76,7 +75,7 @@ fun VerticalSlider(
     ) {
         // Draws the central bar of the slider (with rounded ends)
         drawRoundRect(
-            color = trackColor,
+            color = colors.tertiary,
             style = Fill,
             alpha = 0.75f,
             size = Size(BAR_WIDTH_TO_BOX_WIDTH * HEIGHT_TO_WIDTH * heightPx, heightPx),
@@ -85,7 +84,7 @@ fun VerticalSlider(
         )
         // Draws the circle
         drawCircle(
-            color = thumbColor,
+            color = colors.primary,
             style = Fill,
             radius = HEIGHT_TO_WIDTH * heightPx,
             // Calculating where the center should be based on the range and value of the slider

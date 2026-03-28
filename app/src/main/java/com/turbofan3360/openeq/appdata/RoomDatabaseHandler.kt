@@ -8,14 +8,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 // Class for the user to easily handle the database, serializing and de-serializing data
-class RoomDatabaseHandler(scope: CoroutineScope) {
+object RoomDatabaseHandler {
     private var db: EqPresetDatabase? = null
-    private var myScope = scope
 
-    companion object {
-        var dbInitialized = false
-        var idStrings = mutableListOf<String>()
-    }
+    var dbInitialized = false
+    var idStrings = mutableListOf<String>()
 
     // Function to build the database instance
     // Only lets you run the function once
@@ -36,10 +33,14 @@ class RoomDatabaseHandler(scope: CoroutineScope) {
         getAllPresetIds()
     }
 
-    fun addPreset(stringPresetId: String, eqLevels: List<Float>): Boolean {
+    fun addPreset(
+        stringPresetId: String,
+        eqLevels: List<Float>,
+        myScope: CoroutineScope
+    ) {
         // Checks ID is valid
         if (idStrings.contains(stringPresetId)) {
-            return false
+            return
         }
 
         // Launches a coroutine to save the current EQ levels as a new preset in the database
@@ -50,13 +51,12 @@ class RoomDatabaseHandler(scope: CoroutineScope) {
             // Once preset added to database, adds the new preset ID to the list of preset ID string
             idStrings += stringPresetId
         }
-
-        return true
     }
 
     fun updatePreset(
         stringPresetId: String,
         eqLevels: List<Float>,
+        myScope: CoroutineScope
     ) {
         if (!idStrings.contains(stringPresetId)) {
             return
@@ -72,7 +72,7 @@ class RoomDatabaseHandler(scope: CoroutineScope) {
 
     fun updatePresetBlocking(
         stringPresetId: String,
-        eqLevels: List<Float>
+        eqLevels: List<Float>,
     ) {
         if (!idStrings.contains(stringPresetId)) {
             return
@@ -88,6 +88,7 @@ class RoomDatabaseHandler(scope: CoroutineScope) {
 
     fun getPreset(
         stringPresetId: String,
+        myScope: CoroutineScope,
         onPresetRetrieved: (List<Float>) -> Unit
     ): Boolean {
         // Checking whether the desired preset exists or not
@@ -111,11 +112,12 @@ class RoomDatabaseHandler(scope: CoroutineScope) {
 
     fun deletePreset(
         stringPresetId: String,
+        myScope: CoroutineScope,
         onPresetDelete: () -> Unit
-    ): Boolean {
+    ) {
         // Checking whether the desired preset exists or not
         if (!idStrings.contains(stringPresetId)) {
-            return false
+            return
         }
 
         // Launches coroutine to remove preset from database
@@ -125,8 +127,6 @@ class RoomDatabaseHandler(scope: CoroutineScope) {
 
             onPresetDelete()
         }
-
-        return true
     }
 
     private fun getAllPresetIds() {
