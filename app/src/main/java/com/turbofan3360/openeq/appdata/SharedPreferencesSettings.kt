@@ -29,4 +29,13 @@ class SharedPreferencesSettings(context: Context) {
             putBoolean(key, value)
         }
     }
+
+    fun appDeleteBoolean(
+        key: String
+    ) {
+        // Deletes a preset from the shared preferences
+        sharedPref.edit {
+            remove(key)
+        }
+    }
 }

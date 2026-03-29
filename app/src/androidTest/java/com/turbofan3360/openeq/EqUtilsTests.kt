@@ -20,8 +20,6 @@ import kotlin.math.min
 
 private const val DECIBEL_TO_MILLIBEL = 100f
 
-// val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-
 @RunWith(AndroidJUnit4::class)
 class EqUtilsTests {
     lateinit var testingMediaPlayer: MediaPlayer
@@ -84,7 +82,7 @@ class EqUtilsTests {
 
         // Checking they're in size order
         for (i in 0..<(bands.size - 1)) {
-            assertTrue(bands[i] < bands[i+1])
+            assertTrue(bands[i] < bands[i + 1])
         }
 
         // Checking range is valid correct
