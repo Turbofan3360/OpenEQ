@@ -1,12 +1,16 @@
 package com.turbofan3360.openeq.audioprocessing
 
+import android.media.AudioManager
 import android.media.MediaPlayer
 import android.media.audiofx.Equalizer
+import kotlin.math.min
 import kotlin.math.round
 
 private const val DECIBEL_TO_MILLIBEL = 100f
 private const val HERZ_TO_MILLIHERZ = 1000f
 private const val ONE_MEGAHERZ = 1000 // in Hz
+
+// TODO: Tidy up temporary media player handling and make it more robust
 
 // A series of utility functions to help the code manage equalizer instances
 
@@ -31,8 +35,12 @@ fun setEqualizer(
     eq: Equalizer,
     levels: List<Float>
 ) {
+    // Working out the maximum number of times I can loop and set an EQ level
+    // Can't be more than the number of bands, but must be equal to the number of levels passed
+    val loopLim = min(levels.size, eq.numberOfBands.toInt())
+
     // Sets levels of an equalizer instance to the given values
-    for (i in 0..<levels.size) {
+    for (i in 0..<loopLim) {
         eq.setBandLevel(i.toShort(), round(levels[i] * DECIBEL_TO_MILLIBEL).toInt().toShort())
     }
 }
@@ -56,10 +64,15 @@ fun getEqBands(): List<Float> {
 }
 
 fun getEqRange(): List<Float> {
+    // Creates a temporary media player so it can grab a valid audio session ID, and get EQ range
+    val tempMediaPlayer = MediaPlayer()
+
     // Returns a [min, max] float value range that the EQ lets you select on this device
-    val eqObj = addEqualizer(0)
+    val eqObj = addEqualizer(tempMediaPlayer.audioSessionId)
     val eqRange = eqObj.getBandLevelRange()
+
     delEqualizer(eqObj)
+    tempMediaPlayer.release()
 
     return listOf(eqRange[0] / DECIBEL_TO_MILLIBEL, eqRange[1] / DECIBEL_TO_MILLIBEL)
 }
