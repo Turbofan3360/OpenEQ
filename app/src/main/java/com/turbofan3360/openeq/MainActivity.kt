@@ -48,7 +48,7 @@ class MainActivityViewModel : ViewModel() {
 class MainActivity : ComponentActivity() {
     val myViewModel: MainActivityViewModel by viewModels()
 
-    val appSettings by lazy { SharedPreferencesSettings(this) }
+    val appSettings by lazy { SharedPreferencesSettings(this, "app_settings") }
     private val foregroundServiceHandler by lazy { ForegroundServiceHandler(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {

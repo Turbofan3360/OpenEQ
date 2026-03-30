@@ -8,8 +8,11 @@ import androidx.core.content.edit
 // Handles storing basic app settings in shared preferences (much simpler than a data store, or room database)
 // Currently only setting stored this way is whether attached to global audio mix or not
 
-class SharedPreferencesSettings(context: Context) {
-    val sharedPref: SharedPreferences by lazy { context.getSharedPreferences("app_settings", MODE_PRIVATE) }
+class SharedPreferencesSettings(
+    context: Context,
+    name: String
+) {
+    val sharedPref: SharedPreferences by lazy { context.getSharedPreferences(name, MODE_PRIVATE) }
 
     fun getAppSettingBoolean(
         key: String,
@@ -36,6 +39,13 @@ class SharedPreferencesSettings(context: Context) {
         // Deletes a preset from the shared preferences
         sharedPref.edit {
             remove(key)
+        }
+    }
+
+    fun appClearSharedPreferences() {
+        // Clears all data
+        sharedPref.edit {
+            clear()
         }
     }
 }
