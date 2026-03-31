@@ -19,19 +19,11 @@ class RoomDatabaseTests {
     @Before
     fun setup() {
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-
-
     }
 
     @Test
-    fun useAppContext() {
-        // Context of the app under test.
-        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        assertEquals("com.turbofan3360.openeq", appContext.packageName)
-    }
+    fun testToBeWritten() {}
 
     @After
-    fun teardown() {
-
-    }
+    fun teardown() {}
 }

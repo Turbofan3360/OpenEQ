@@ -12,7 +12,7 @@ import org.junit.Test
  * See [testing documentation](http://d.android.com/tools/testing).
  */
 
-class UnitTests {
+class MathUtilsUnitTests {
     @Test
     fun uiRounding_isCorrect() {
         // Testing the ui/utils function for rounding to one decimal place
