@@ -52,6 +52,10 @@ class RoomDatabaseTests {
         // Checking values
         assertEquals(listOf(1.1f, 2.0f, -9.8f, -5.0f, 0.0f), returnedValues)
 
+        // Checking that adding another preset with same ID doesn't do anything
+        job = RoomDatabaseHandler.addPreset("testing_db_add_item", listOf(1f, 2f, 3f, 4f, 5f), this)
+        assertNull(job)
+
         // Deleting testing preset from DB
         job = RoomDatabaseHandler.deletePreset("testing_db_add_item", this) {}
         job?.join()
@@ -78,6 +82,10 @@ class RoomDatabaseTests {
         // Checking values
         assertEquals(listOf(2.4f, 4.1f, 0.0f, -2.2f, -4.5f), returnedValues)
 
+        // Checking that updating non-existing item doesn't do anything
+        job = RoomDatabaseHandler.updatePreset("some_invalid_id", listOf(1f, 2f, 3f, 4f, 5f), this)
+        assertNull(job)
+
         // Deleting testing preset from DB
         job = RoomDatabaseHandler.deletePreset("testing_db_update_item", this) {}
         job?.join()
@@ -99,6 +107,10 @@ class RoomDatabaseTests {
 
         // Checking values
         assertEquals(listOf(1.2f, 2.8f, 0.0f, -1.4f, -2.5f), returnedValues)
+
+        // Checking that getting non-existent item doesn't do anything
+        job = RoomDatabaseHandler.getPreset("some_invalid_id", this) {}
+        assertNull(job)
 
         // Deleting testing preset from DB
         job = RoomDatabaseHandler.deletePreset("testing_db_get_item", this) {}
@@ -124,6 +136,10 @@ class RoomDatabaseTests {
 
         // Trying to get item from DB - should return null
         job = RoomDatabaseHandler.getPreset("testing_db_delete_item", this) { valuesWereReturned = true }
+
+        // Checking that deleting non-existent item doesn't do anything
+        job = RoomDatabaseHandler.deletePreset("some_invalid_id", this) {}
+        assertNull(job)
 
         assertNull(job)
         assertFalse(valuesWereReturned)
