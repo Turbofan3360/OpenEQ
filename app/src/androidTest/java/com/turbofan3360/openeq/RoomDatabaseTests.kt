@@ -3,6 +3,7 @@ package com.turbofan3360.openeq
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.turbofan3360.openeq.appdata.RoomDatabaseHandler
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -32,7 +33,7 @@ class RoomDatabaseTests {
 
     @Test
     fun addToDatabase_isCorrect() = runTest {
-        var returnedValues = listOf<Float>()
+        val deferredValues = CompletableDeferred<List<Float>>()
         // Adding a preset to the database (thing that's being testing)
         var job = RoomDatabaseHandler.addPreset("testing_db_add_item", listOf(1.1f, 2.0f, -9.8f, -5.0f, 0.0f), this)
 
@@ -44,10 +45,12 @@ class RoomDatabaseTests {
         assertTrue(RoomDatabaseHandler.idStrings.contains("testing_db_add_item"))
 
         // Getting the values back that I just wrote to the DB
-        job = RoomDatabaseHandler.getPreset("testing_db_add_item", this) { returnedValues = it }
+        job = RoomDatabaseHandler.getPreset("testing_db_add_item", this) { deferredValues.complete(it) }
 
         // Waiting for DB op to complete
         job?.join()
+
+        val returnedValues = deferredValues.await()
 
         // Checking values
         assertEquals(listOf(1.1f, 2.0f, -9.8f, -5.0f, 0.0f), returnedValues)
@@ -63,7 +66,7 @@ class RoomDatabaseTests {
 
     @Test
     fun updateDatabaseItem_isCorrect() = runTest {
-        var returnedValues = listOf<Float>()
+        val deferredValues = CompletableDeferred<List<Float>>()
         // Adding a value that can then be edited, waiting for the DB op to complete
         var job = RoomDatabaseHandler.addPreset("testing_db_update_item", listOf(1.0f, 2.0f, 0.0f, -1.0f, -2.0f), this)
         job?.join()
@@ -76,8 +79,10 @@ class RoomDatabaseTests {
         job?.join()
 
         // Getting the values back that I just wrote to the DB, waiting for op to complete
-        job = RoomDatabaseHandler.getPreset("testing_db_update_item", this) { returnedValues = it }
+        job = RoomDatabaseHandler.getPreset("testing_db_update_item", this) { deferredValues.complete(it) }
         job?.join()
+
+        val returnedValues = deferredValues.await()
 
         // Checking values
         assertEquals(listOf(2.4f, 4.1f, 0.0f, -2.2f, -4.5f), returnedValues)
@@ -93,24 +98,29 @@ class RoomDatabaseTests {
 
     @Test
     fun getDatabaseItem_isCorrect() = runTest {
-        var returnedValues = listOf<Float>()
+        val deferredValues = CompletableDeferred<List<Float>>()
+        val deferredBool = CompletableDeferred(false)
         // Adding a value that can then be retrieved, waiting for the DB op to complete
         var job = RoomDatabaseHandler.addPreset("testing_db_get_item", listOf(1.2f, 2.8f, 0.0f, -1.4f, -2.5f), this)
         job?.join()
 
         // Getting the values back that I just wrote to the DB (thing that's being tested)
-        job = RoomDatabaseHandler.getPreset("testing_db_get_item", this) { returnedValues = it }
+        job = RoomDatabaseHandler.getPreset("testing_db_get_item", this) { deferredValues.complete(it) }
 
         // Checking returned job object is valid + waiting for DB op to complete
         assertNotNull(job)
         job?.join()
 
+        val returnedValues = deferredValues.await()
+
         // Checking values
         assertEquals(listOf(1.2f, 2.8f, 0.0f, -1.4f, -2.5f), returnedValues)
 
         // Checking that getting non-existent item doesn't do anything
-        job = RoomDatabaseHandler.getPreset("some_invalid_id", this) {}
+        job = RoomDatabaseHandler.getPreset("some_invalid_id", this) { deferredBool.complete(true) }
+
         assertNull(job)
+        assertFalse(deferredBool.await())
 
         // Deleting testing preset from DB
         job = RoomDatabaseHandler.deletePreset("testing_db_get_item", this) {}
@@ -119,30 +129,33 @@ class RoomDatabaseTests {
 
     @Test
     fun deleteDatabaseItem_isCorrect() = runTest {
-        var valuesWereReturned = false
+        val deferredVal = CompletableDeferred(false)
         // Adding a value that can then be retrieved, waiting for the DB op to complete
         var job = RoomDatabaseHandler.addPreset("testing_db_delete_item", listOf(1.2f, 2.8f, 0.0f, -1.4f, -2.5f), this)
         job?.join()
 
         // Deleting testing preset from DB (thing that's being tested)
-        job = RoomDatabaseHandler.deletePreset("testing_db_delete_item", this) {}
+        job = RoomDatabaseHandler.deletePreset("testing_db_delete_item", this) { deferredVal.complete(true) }
 
         // Checking returned job object is valid + waiting for DB op to complete
         assertNotNull(job)
         job?.join()
+        assertFalse(deferredVal.await())
 
         // Checking ID string properly removed from ID string cache
         assertFalse(RoomDatabaseHandler.idStrings.contains("testing_db_delete_item"))
 
         // Trying to get item from DB - should return null
-        job = RoomDatabaseHandler.getPreset("testing_db_delete_item", this) { valuesWereReturned = true }
+        job = RoomDatabaseHandler.getPreset("testing_db_delete_item", this) { deferredVal.complete(true) }
+
+        assertNull(job)
+        assertFalse(deferredVal.await())
 
         // Checking that deleting non-existent item doesn't do anything
-        job = RoomDatabaseHandler.deletePreset("some_invalid_id", this) {}
-        assertNull(job)
+        job = RoomDatabaseHandler.deletePreset("some_invalid_id", this) { deferredVal.complete(true) }
 
         assertNull(job)
-        assertFalse(valuesWereReturned)
+        assertFalse(deferredVal.await())
     }
 
     @After
