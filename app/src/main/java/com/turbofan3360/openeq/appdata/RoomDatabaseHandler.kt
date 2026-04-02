@@ -19,7 +19,7 @@ object RoomDatabaseHandler {
     // Function to build the database instance
     // Only lets you run the function once
     fun buildDatabase(dbId: String, context: Context) {
-        if (db != null) {
+        if (dbInitialized) {
             return
         }
 
@@ -38,7 +38,7 @@ object RoomDatabaseHandler {
 
     // Builds a database in memory (to be used for testing the database handler)
     fun buildDatabaseInMemory(context: Context) {
-        if (db != null) {
+        if (dbInitialized) {
             return
         }
 
