@@ -18,21 +18,44 @@ object RoomDatabaseHandler {
 
     // Function to build the database instance
     // Only lets you run the function once
-    fun buildDatabase(context: Context) {
-        if (dbInitialized) {
+    fun buildDatabase(dbId: String, context: Context) {
+        if (db != null) {
             return
         }
 
         // Building the database instance
         db = Room.databaseBuilder(
             context.applicationContext,
-            EqPresetDatabase::class.java, "preset-database"
+            EqPresetDatabase::class.java,
+            dbId
         ).build()
 
         dbInitialized = true
 
         // Finds what's in the database (blocking to ensure other code doesn't break
         getAllPresetIds()
+    }
+
+    // Builds a database in memory (to be used for testing the database handler)
+    fun buildDatabaseInMemory(context: Context) {
+        if (db != null) {
+            return
+        }
+
+        db = Room.inMemoryDatabaseBuilder(
+            context.applicationContext,
+            EqPresetDatabase::class.java
+        ).build()
+
+        dbInitialized = true
+        idStrings.clear()
+    }
+
+    // Function to close down the database safely
+    fun closeDatabase() {
+        db?.close()
+        db = null
+        dbInitialized = false
     }
 
     fun addPreset(

@@ -152,7 +152,7 @@ class MainActivity : ComponentActivity() {
 
     private fun appDatabaseInit() {
         // Starts the app database to access stored preset info
-        RoomDatabaseHandler.buildDatabase(this)
+        RoomDatabaseHandler.buildDatabase("preset-database", this)
 
         // Checking if a "latest_eq_levels" preset already exists; if so setting my EQ levels to it
         if (RoomDatabaseHandler.idStrings.contains(getString(R.string.db_key_recent_eq_levels))) {
