@@ -1,5 +1,6 @@
 package com.turbofan3360.openeq
 
+import android.app.Application
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -10,7 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.lifecycleScope
 import com.turbofan3360.openeq.appdata.RoomDatabaseHandler
 import com.turbofan3360.openeq.appdata.SharedPreferencesSettings
@@ -23,7 +24,9 @@ import com.turbofan3360.openeq.ui.screens.MainScreen
 import com.turbofan3360.openeq.ui.theme.OpenEQTheme
 import kotlinx.coroutines.runBlocking
 
-class MainActivityViewModel : ViewModel() {
+class MainActivityViewModel(application: Application) : AndroidViewModel(application) {
+    val context = getApplication<Application>()
+
     // State - whether EQ service is enabled or not
     var eqEnabled by mutableStateOf(false)
 
@@ -34,13 +37,13 @@ class MainActivityViewModel : ViewModel() {
     var tryGlobalAudio by mutableStateOf(false)
 
     // EQ frequency bands in milliHz
-    val eqFrequencyBands = getEqBands()
+    val eqFrequencyBands = getEqBands(context)
 
     // String labels for EQ frequency bands
     val eqFrequencyBandsStr = eqFrequenciesToLabels(eqFrequencyBands)
 
     // Supported range of EQ bands (in dB)
-    val eqRange = getEqRange()
+    val eqRange = getEqRange(context)
 
     // State of the sliders (and so EQ levels)
     var eqLevels = List(eqFrequencyBands.size) { 0f }.toMutableStateList()
